@@ -81,11 +81,20 @@ export async function POST(request: Request) {
             }
           })
 
+          const currentEnd = subEntity.current_end
+            ? new Date(subEntity.current_end * 1000).toISOString()
+            : null
+
           await Promise.all([
-            // Update subscription status
+            // Update subscription status + billing window
             supabase
               .from('subscriptions')
-              .update({ status: 'active', updated_at: new Date().toISOString() })
+              .update({
+                status:        'active',
+                current_start: new Date().toISOString(),
+                current_end:   currentEnd,
+                updated_at:    new Date().toISOString(),
+              })
               .eq('razorpay_subscription_id', rzpSubId),
             // Upgrade profile plan
             supabase
@@ -121,6 +130,15 @@ export async function POST(request: Request) {
           .maybeSingle() as { data: { plan_name: string; user_id: string } | null }
 
         if (row) {
+          // Refresh current_end on every renewal so settings page stays accurate
+          await supabase
+            .from('subscriptions')
+            .update({
+              current_end: nextBilling,
+              updated_at:  new Date().toISOString(),
+            })
+            .eq('razorpay_subscription_id', rzpSubId)
+
           await supabase.from('usage_logs').insert({
             user_id:     row.user_id,
             action:      'payment',

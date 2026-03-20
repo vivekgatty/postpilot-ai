@@ -30,6 +30,7 @@ export type SubscriptionStatus =
   | 'cancelled'
   | 'completed'
   | 'expired'
+  | 'paused'
 
 
 // ─── Database Row Interfaces (mirror schema exactly) ─────────────────────────
