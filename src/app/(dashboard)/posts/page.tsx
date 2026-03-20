@@ -371,7 +371,7 @@ export default function PostsPage() {
       })
       if (error) toast.error('Failed to delete post — please try again')
     }, 240)
-  }, [deleteTarget, deletePost])
+  }, [deleteTarget, deletePost, toast])
 
   // ── Render ────────────────────────────────────────────────────────────────
 

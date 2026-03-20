@@ -21,7 +21,7 @@ function SidebarSkeleton() {
 
 export default function DashboardError({
   error,
-  reset,
+  reset: _reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
