@@ -145,7 +145,7 @@ function UpgradeGate({ plan }: { plan: PlanType }) {
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
               Upgrade your plan
             </p>
-            <PricingTable currentPlan={plan} />
+            <PricingTable currentPlan={plan} onUpgrade={() => {}} loading={false} />
           </div>
         </div>
       </div>
