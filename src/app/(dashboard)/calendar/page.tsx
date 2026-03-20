@@ -2,31 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import CalendarGrid from '@/components/features/CalendarGrid'
+import { useToast } from '@/components/ui/Toast'
 import type { Post } from '@/types'
-
-// ── Inline toast ──────────────────────────────────────────────────────────────
-
-interface Toast { id: number; message: string; type: 'success' | 'error' | 'info' }
-
-let toastId = 0
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CalendarPage() {
-  const [posts,    setPosts]    = useState<Post[]>([])
-  const [month,    setMonth]    = useState(() => {
+  const [posts,   setPosts]   = useState<Post[]>([])
+  const [month,   setMonth]   = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d
   })
-  const [loading,  setLoading]  = useState(true)
-  const [toasts,   setToasts]   = useState<Toast[]>([])
-
-  // ── Toast helpers ───────────────────────────────────────────────────────────
-
-  const pushToast = useCallback((message: string, type: Toast['type'] = 'info') => {
-    const id = ++toastId
-    setToasts(prev => [...prev, { id, message, type }])
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000)
-  }, [])
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
   // ── Fetch posts ─────────────────────────────────────────────────────────────
 
@@ -50,11 +37,11 @@ export default function CalendarPage() {
       ]
       setPosts(all)
     } catch {
-      pushToast('Failed to load posts', 'error')
+      toast.error('Failed to load posts')
     } finally {
       setLoading(false)
     }
-  }, [pushToast])
+  }, [toast])
 
   useEffect(() => { fetchPosts() }, [fetchPosts])
 
@@ -86,10 +73,10 @@ export default function CalendarPage() {
 
       // Replace with server response
       setPosts(prev => prev.map(p => p.id === id ? data.post! : p))
-      pushToast('Post scheduled', 'success')
+      toast.success('Post scheduled')
     } catch (err) {
       setPosts(snapshot)
-      pushToast(err instanceof Error ? err.message : 'Failed to schedule post', 'error')
+      toast.error(err instanceof Error ? err.message : 'Failed to schedule post')
     }
   }
 
@@ -116,10 +103,10 @@ export default function CalendarPage() {
       if (!res.ok) throw new Error(data.error ?? 'Failed to unschedule')
 
       setPosts(prev => prev.map(p => p.id === id ? data.post! : p))
-      pushToast('Post moved back to drafts', 'info')
+      toast.info('Post moved back to drafts')
     } catch (err) {
       setPosts(snapshot)
-      pushToast(err instanceof Error ? err.message : 'Failed to unschedule post', 'error')
+      toast.error(err instanceof Error ? err.message : 'Failed to unschedule post')
     }
   }
 
@@ -198,23 +185,6 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Toasts */}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 items-end pointer-events-none">
-        {toasts.map(t => (
-          <div
-            key={t.id}
-            className={[
-              'px-4 py-3 rounded-xl text-sm font-medium shadow-lg pointer-events-auto',
-              'animate-in slide-in-from-bottom-2 fade-in duration-200',
-              t.type === 'success' ? 'bg-[#1D9E75] text-white' :
-              t.type === 'error'   ? 'bg-red-500 text-white' :
-                                     'bg-[#0A2540] text-white',
-            ].join(' ')}
-          >
-            {t.message}
-          </div>
-        ))}
-      </div>
     </div>
   )
 }

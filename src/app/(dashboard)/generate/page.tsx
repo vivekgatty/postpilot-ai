@@ -8,6 +8,7 @@ import {
   useCallback,
   Suspense,
 } from 'react'
+
 import { useSearchParams } from 'next/navigation'
 import {
   Sparkles,
@@ -15,7 +16,6 @@ import {
   RefreshCw,
   BookmarkPlus,
   ChevronDown,
-  X,
 } from 'lucide-react'
 import ToneSelector from '@/components/features/ToneSelector'
 import PostCard from '@/components/features/PostCard'
@@ -23,7 +23,7 @@ import UsageMeter from '@/components/features/UsageMeter'
 import { cn } from '@/lib/utils'
 import { NICHE_OPTIONS } from '@/lib/constants'
 import type { ToneType, NicheType, GeneratedPost, UsageInfo, Profile } from '@/types'
-import type { ToastType } from '@/components/ui/Toast'
+import { useToast } from '@/components/ui/Toast'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -33,55 +33,6 @@ const LOADING_MESSAGES = [
   'Adding Indian context...',
   'Polishing the copy...',
 ]
-
-// ── Local stackable toast ─────────────────────────────────────────────────────
-// (The existing Toast.tsx has fixed positioning baked-in; we need stackable ones.)
-
-interface ToastItem { id: number; message: string; type: ToastType }
-let _toastId = 0
-
-function InlineToast({
-  message,
-  type,
-  onClose,
-}: {
-  message: string
-  type: ToastType
-  onClose: () => void
-}) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3000)
-    return () => clearTimeout(t)
-  }, [onClose])
-
-  const bg: Record<ToastType, string> = {
-    success: 'bg-[#1D9E75]',
-    error:   'bg-red-600',
-    info:    'bg-[#0A2540]',
-    warning: 'bg-amber-500',
-  }
-  const icons: Record<ToastType, string> = {
-    success: '✓', error: '✕', info: 'ℹ', warning: '⚠',
-  }
-
-  return (
-    <div className={cn(
-      'flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl min-w-[260px] max-w-xs text-white animate-slide-up',
-      bg[type],
-    )}>
-      <span className="text-base font-bold flex-shrink-0">{icons[type]}</span>
-      <p className="text-sm font-medium flex-1">{message}</p>
-      <button
-        type="button"
-        onClick={onClose}
-        className="opacity-70 hover:opacity-100 transition-opacity flex-shrink-0"
-        aria-label="Dismiss"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  )
-}
 
 // ── Shimmer skeleton card ─────────────────────────────────────────────────────
 
@@ -133,8 +84,7 @@ function GeneratePageInner() {
   // Profile / usage
   const [usage, setUsage]     = useState<UsageInfo | null>(null)
 
-  // Toasts
-  const [toasts, setToasts]   = useState<ToastItem[]>([])
+  const { toast } = useToast()
 
   // ── Pre-fill from ?topic= ────────────────────────────────────────────────
   useEffect(() => {
@@ -183,16 +133,6 @@ function GeneratePageInner() {
     return `${wordCount} words — great detail!`
   })()
 
-  // ── Toast helpers ────────────────────────────────────────────────────────
-  const addToast = useCallback((message: string, type: ToastType) => {
-    const id = ++_toastId
-    setToasts(prev => [...prev, { id, message, type }])
-  }, [])
-
-  const removeToast = useCallback((id: number) => {
-    setToasts(prev => prev.filter(t => t.id !== id))
-  }, [])
-
   // ── Rotate loading messages while generating ─────────────────────────────
   useEffect(() => {
     if (!generating) return
@@ -222,10 +162,7 @@ function GeneratePageInner() {
       setPosts(data.posts ?? [])
       refreshUsage()
     } catch (err) {
-      addToast(
-        err instanceof Error ? err.message : 'Generation failed — please try again',
-        'error',
-      )
+      toast.error(err instanceof Error ? err.message : 'Generation failed — please try again')
     } finally {
       setGenerating(false)
     }
@@ -253,16 +190,16 @@ function GeneratePageInner() {
       startTransition(() => {
         setSavedSet(prev => new Set(Array.from(prev).concat(post.variation)))
       })
-      addToast('Post saved to drafts', 'success')
+      toast.success('Post saved to drafts')
     } catch {
-      addToast('Failed to save — please try again', 'error')
+      toast.error('Failed to save — please try again')
     } finally {
       setSavingIdx(null)
     }
-  }, [savingIdx, tone, niche, topic, startTransition, addToast])
+  }, [savingIdx, tone, niche, topic, startTransition, toast])
 
   // ── Copy callback ─────────────────────────────────────────────────────────
-  const handleCopy = useCallback(() => addToast('Copied to clipboard', 'info'), [addToast])
+  const handleCopy = useCallback(() => toast.info('Copied to clipboard'), [toast])
 
   // ── Save all 3 sequentially ───────────────────────────────────────────────
   const handleSaveAll = async () => {
@@ -485,18 +422,6 @@ function GeneratePageInner() {
         )}
       </div>
 
-      {/* ─────────────────── TOAST STACK — bottom-right ──────────────────── */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none">
-        {toasts.map(t => (
-          <div key={t.id} className="pointer-events-auto">
-            <InlineToast
-              message={t.message}
-              type={t.type}
-              onClose={() => removeToast(t.id)}
-            />
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
