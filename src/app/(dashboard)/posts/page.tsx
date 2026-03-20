@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Sparkles,
@@ -13,13 +13,12 @@ import {
   Trash2,
   Pencil,
   ChevronRight,
-  Loader2,
 } from 'lucide-react'
 import { usePosts } from '@/hooks/usePosts'
 import PostEditor from '@/components/features/PostEditor'
 import Modal from '@/components/ui/Modal'
 import { cn } from '@/lib/utils'
-import type { Post, ToneType, NicheType, PostStatus, UpdatePostInput } from '@/types'
+import type { Post, ToneType, UpdatePostInput } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
