@@ -7,10 +7,12 @@ export const anthropic = new Anthropic({
 export const AI_MODEL = 'claude-haiku-4-5-20251001'
 
 export async function generateLinkedInPost(
-  topic: string,
-  tone: string,
-  keywords: string[] = [],
-  language = 'en'
+  topic:           string,
+  tone:            string,
+  niche?:          string,
+  keywords:        string[] = [],
+  language         = 'en',
+  variationIndex   = 1,
 ): Promise<string> {
   const langInstruction =
     language === 'hi'
@@ -19,10 +21,18 @@ export async function generateLinkedInPost(
         ? 'Write in Hinglish (mix of Hindi and English, using Roman script for Hindi words).'
         : 'Write in English.'
 
-  const keywordsInstruction =
-    keywords.length > 0
-      ? `Include these keywords naturally: ${keywords.join(', ')}.`
-      : ''
+  const keywordsInstruction = keywords.length > 0
+    ? `Incorporate these themes naturally: ${keywords.join(', ')}.`
+    : ''
+
+  const nicheInstruction = niche
+    ? `Audience niche: ${niche}. Tailor examples, references, and context to this audience.`
+    : ''
+
+  const variationInstruction =
+    variationIndex === 1 ? 'Lead with a bold hook or surprising stat.'
+    : variationIndex === 2 ? 'Lead with a personal story or "I" statement.'
+    : 'Lead with a contrarian opinion or provocative question.'
 
   const message = await anthropic.messages.create({
     model: AI_MODEL,
@@ -34,8 +44,11 @@ export async function generateLinkedInPost(
 
 Topic: ${topic}
 Tone: ${tone}
+${nicheInstruction}
 ${langInstruction}
 ${keywordsInstruction}
+
+Opening style: ${variationInstruction}
 
 Requirements:
 - 150-300 words optimal length
