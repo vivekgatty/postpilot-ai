@@ -19,16 +19,13 @@ function SidebarSkeleton() {
   )
 }
 
-export default function DashboardError({
-  error,
-  reset: _reset,
-}: {
+export default function DashboardError(props: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
   useEffect(() => {
-    console.error(error)
-  }, [error])
+    console.error(props.error)
+  }, [props.error])
 
   return (
     <div className="min-h-screen bg-[#F8F8F6]">
@@ -72,9 +69,9 @@ export default function DashboardError({
               This section ran into a problem. You can try reloading or contact support if it persists.
             </p>
 
-            {process.env.NODE_ENV === 'development' && error.message && (
+            {process.env.NODE_ENV === 'development' && props.error.message && (
               <pre className="mb-5 text-left bg-red-50 border border-red-100 text-red-700 text-xs rounded-xl px-4 py-3 overflow-x-auto whitespace-pre-wrap break-all">
-                {error.message}
+                {props.error.message}
               </pre>
             )}
 
