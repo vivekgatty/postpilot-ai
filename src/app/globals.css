@@ -73,4 +73,16 @@
     background-size: 200% 100%;
     animation: shimmer 1.6s ease-in-out infinite;
   }
+
+  @keyframes card-exit {
+    to {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+    }
+  }
+
+  .card-exit {
+    animation: card-exit 0.22s ease-out forwards;
+    pointer-events: none;
+  }
 }

@@ -67,11 +67,44 @@ export interface ToneSelectorProps {
   value:     ToneType
   onChange:  (t: ToneType) => void
   disabled?: boolean
+  /** compact renders as a horizontal row of condensed pills (no icons/sublabels) */
+  compact?:  boolean
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ToneSelector({ value, onChange, disabled }: ToneSelectorProps) {
+export default function ToneSelector({ value, onChange, disabled, compact }: ToneSelectorProps) {
+  // ── Compact mode: horizontal pill row ───────────────────────────────────
+  if (compact) {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {TONES.map((tone) => {
+          const { label } = TONE_META[tone]
+          const selected  = value === tone
+          return (
+            <button
+              key={tone}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(tone)}
+              className={cn(
+                'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all duration-150',
+                'focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                selected
+                  ? 'bg-[#E1F5EE] border-[#1D9E75] text-[#1D9E75]'
+                  : 'bg-white border-[#E5E4E0] text-gray-500 hover:border-[#1D9E75]/60 hover:text-[#0A2540]',
+              )}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  // ── Full card grid ───────────────────────────────────────────────────────
   return (
     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
       {TONES.map((tone) => {
