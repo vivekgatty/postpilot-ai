@@ -4,18 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button'
 import IdeaCard from '@/components/features/IdeaCard'
-import type { Idea } from '@/types'
+import { NICHE_OPTIONS } from '@/lib/constants'
+import type { Idea, NicheType } from '@/types'
 
 export default function IdeasPage() {
   const router = useRouter()
-  const [industry, setIndustry] = useState('')
-  const [role, setRole] = useState('')
+  const [niche, setNiche] = useState<NicheType>('Other')
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleGenerate = async () => {
-    if (!industry || !role) return
     setLoading(true)
     setError(null)
 
@@ -23,7 +22,7 @@ export default function IdeasPage() {
       const res = await fetch('/api/generate/ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ industry, role, count: 10 }),
+        body: JSON.stringify({ niche, count: 10 }),
       })
 
       const data = await res.json() as { ideas?: string[]; error?: string }
@@ -56,25 +55,20 @@ export default function IdeasPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#0A2540]">Content Ideas</h1>
-        <p className="text-gray-500 mt-1">Get AI-generated LinkedIn post ideas tailored to you.</p>
+        <p className="text-gray-500 mt-1">Get AI-generated LinkedIn post ideas tailored to your niche.</p>
       </div>
 
       <div className="flex gap-3 mb-6">
-        <input
-          type="text"
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          placeholder="Industry (e.g. IT, Finance)"
+        <select
+          value={niche}
+          onChange={(e) => setNiche(e.target.value as NicheType)}
           className="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75]"
-        />
-        <input
-          type="text"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          placeholder="Role (e.g. Product Manager)"
-          className="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75]"
-        />
-        <Button onClick={handleGenerate} loading={loading} disabled={!industry || !role}>
+        >
+          {NICHE_OPTIONS.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+        <Button onClick={handleGenerate} loading={loading}>
           Generate Ideas
         </Button>
       </div>
@@ -87,7 +81,7 @@ export default function IdeasPage() {
         <div className="text-center py-16 text-gray-400">
           <p className="text-4xl mb-3">💡</p>
           <p className="font-medium">No ideas yet</p>
-          <p className="text-sm mt-1">Enter your industry and role above to get started</p>
+          <p className="text-sm mt-1">Select your niche above and click Generate Ideas</p>
         </div>
       )}
 

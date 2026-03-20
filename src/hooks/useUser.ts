@@ -1,42 +1,79 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import type { UserProfile } from '@/types'
+import type { Profile } from '@/types'
 
-export function useUser() {
-  const [user, setUser] = useState<UserProfile | null>(null)
+interface UseUserReturn {
+  user: User | null
+  profile: Profile | null
+  loading: boolean
+  error: string | null
+}
+
+export function useUser(): UseUserReturn {
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchProfile = useCallback(async (authUser: User) => {
+    const supabase = createClient()
+    const { data, error: err } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', authUser.id)
+      .single()
+
+    if (err) {
+      setError(err.message)
+      setProfile(null)
+    } else {
+      setProfile(data as Profile)
+      setError(null)
+    }
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
 
-    async function fetchUser() {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) {
+    async function init() {
+      setLoading(true)
+      const {
+        data: { user: authUser },
+        error: authErr,
+      } = await supabase.auth.getUser()
+
+      if (authErr || !authUser) {
         setUser(null)
+        setProfile(null)
+        setError(authErr?.message ?? null)
         setLoading(false)
         return
       }
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single()
-
-      setUser(data as UserProfile | null)
+      setUser(authUser)
+      await fetchProfile(authUser)
       setLoading(false)
     }
 
-    fetchUser()
+    init()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchUser()
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser(session.user)
+        await fetchProfile(session.user)
+      } else {
+        setUser(null)
+        setProfile(null)
+      }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [fetchProfile])
 
-  return { user, loading }
+  return { user, profile, loading, error }
 }

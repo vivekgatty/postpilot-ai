@@ -5,12 +5,12 @@ import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import ToneSelector from '@/components/features/ToneSelector'
 import PostEditor from '@/components/features/PostEditor'
-import type { Tone } from '@/types'
+import type { ToneType } from '@/types'
 import { LANGUAGES } from '@/lib/constants'
 
 export default function GeneratePage() {
   const [topic, setTopic] = useState('')
-  const [tone, setTone] = useState<Tone>('professional')
+  const [tone, setTone] = useState<ToneType>('professional')
   const [language, setLanguage] = useState('en')
   const [keywords, setKeywords] = useState('')
   const [generatedContent, setGeneratedContent] = useState('')
@@ -102,8 +102,8 @@ export default function GeneratePage() {
                   onChange={(e) => setLanguage(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75]"
                 >
-                  {LANGUAGES.map((l) => (
-                    <option key={l.value} value={l.value}>{l.label}</option>
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.value} value={lang.value}>{lang.label}</option>
                   ))}
                 </select>
               </div>

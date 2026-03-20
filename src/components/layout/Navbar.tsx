@@ -1,10 +1,10 @@
 'use client'
 
 import Avatar from '@/components/ui/Avatar'
-import { UserProfile } from '@/types'
+import { Profile } from '@/types'
 
 interface NavbarProps {
-  user?: UserProfile | null
+  user?: Profile | null
 }
 
 export default function Navbar({ user }: NavbarProps) {

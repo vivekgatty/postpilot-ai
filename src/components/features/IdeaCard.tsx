@@ -1,6 +1,6 @@
 'use client'
 
-import { Idea } from '@/types'
+import type { Idea } from '@/types'
 import { Card } from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -25,7 +25,7 @@ export default function IdeaCard({ idea, onUse, onDelete }: IdeaCardProps) {
 
       {idea.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-3">
-          {idea.tags.map((tag) => (
+          {idea.tags.map((tag: string) => (
             <Badge key={tag} variant="outline">
               #{tag}
             </Badge>

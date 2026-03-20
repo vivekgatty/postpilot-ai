@@ -1,11 +1,11 @@
 import { ReactNode } from 'react'
 import Sidebar from './Sidebar'
 import Navbar from './Navbar'
-import { UserProfile } from '@/types'
+import { Profile } from '@/types'
 
 interface DashboardShellProps {
   children: ReactNode
-  user?: UserProfile | null
+  user?: Profile | null
 }
 
 export default function DashboardShell({ children, user }: DashboardShellProps) {

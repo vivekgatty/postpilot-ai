@@ -17,8 +17,8 @@ export default function CalendarGrid({ posts, month, onDayClick }: CalendarGridP
 
   const scheduledDates = new Set(
     posts
-      .filter((p) => p.status === 'scheduled' && p.scheduled_at)
-      .map((p) => new Date(p.scheduled_at!).getDate())
+      .filter((p) => p.status === 'scheduled' && p.scheduled_for)
+      .map((p) => new Date(p.scheduled_for!).getDate())
   )
 
   const days = []

@@ -13,13 +13,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json() as GenerateIdeasRequest
-    const { industry, role, count = 10 } = body
+    const { niche, count = 10 } = body
 
-    if (!industry || !role) {
-      return NextResponse.json({ error: 'Industry and role are required' }, { status: 400 })
+    if (!niche) {
+      return NextResponse.json({ error: 'Niche is required' }, { status: 400 })
     }
 
-    const ideas = await generatePostIdeas(industry, role, count)
+    // Pass niche as both industry and role context for the LLM
+    const ideas = await generatePostIdeas(niche, niche, count)
 
     return NextResponse.json({ ideas })
   } catch (error) {

@@ -2,11 +2,11 @@
 
 import { cn } from '@/lib/utils'
 import { TONES } from '@/lib/constants'
-import type { Tone } from '@/types'
+import type { ToneType } from '@/types'
 
 interface ToneSelectorProps {
-  value: Tone
-  onChange: (tone: Tone) => void
+  value: ToneType
+  onChange: (tone: ToneType) => void
 }
 
 export default function ToneSelector({ value, onChange }: ToneSelectorProps) {
@@ -16,7 +16,7 @@ export default function ToneSelector({ value, onChange }: ToneSelectorProps) {
         <button
           key={tone.value}
           type="button"
-          onClick={() => onChange(tone.value as Tone)}
+          onClick={() => onChange(tone.value as ToneType)}
           className={cn(
             'px-4 py-2 rounded-full text-sm font-medium transition-all border',
             value === tone.value

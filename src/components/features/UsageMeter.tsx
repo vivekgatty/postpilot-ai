@@ -1,38 +1,24 @@
 'use client'
 
-import { UsageStats } from '@/types'
+import type { UsageInfo } from '@/types'
 import { calculateUsagePercent, isUnlimited } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
 interface UsageMeterProps {
-  stats: UsageStats
+  info: UsageInfo
   compact?: boolean
 }
 
-export default function UsageMeter({ stats, compact = false }: UsageMeterProps) {
-  const postsPercent = calculateUsagePercent(
-    stats.posts_generated,
-    stats.posts_limit
-  )
-  const ideasPercent = calculateUsagePercent(
-    stats.ideas_generated,
-    stats.ideas_limit
-  )
+export default function UsageMeter({ info, compact = false }: UsageMeterProps) {
+  const percent = calculateUsagePercent(info.used, info.limit)
 
   return (
-    <div className={cn('space-y-3', compact && 'space-y-2')}>
+    <div className={cn('space-y-1', compact && 'space-y-0.5')}>
       <UsageBar
-        label="Posts"
-        used={stats.posts_generated}
-        limit={stats.posts_limit}
-        percent={postsPercent}
-        compact={compact}
-      />
-      <UsageBar
-        label="Ideas"
-        used={stats.ideas_generated}
-        limit={stats.ideas_limit}
-        percent={ideasPercent}
+        label="Generations"
+        used={info.used}
+        limit={info.limit}
+        percent={percent}
         compact={compact}
       />
     </div>

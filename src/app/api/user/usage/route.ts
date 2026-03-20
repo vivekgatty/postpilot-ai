@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { USAGE_LIMITS } from '@/lib/constants'
-import type { UsageStats } from '@/types'
+import { PLAN_LIMITS } from '@/lib/constants'
+import type { PlanType, UsageInfo } from '@/types'
 
 export async function GET() {
   try {
@@ -14,39 +14,21 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('plan, generations_used_this_month, generations_reset_date')
       .eq('id', user.id)
       .single()
 
-    const role = (profile?.role as string) ?? 'free'
-    const limits = USAGE_LIMITS[role] ?? USAGE_LIMITS.free
+    const plan = ((profile?.plan as PlanType) ?? 'free')
+    const limit = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free
 
-    const now = new Date()
-    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString()
-
-    const { count: postsCount } = await supabase
-      .from('posts')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', periodStart)
-
-    const { count: ideasCount } = await supabase
-      .from('ideas')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', periodStart)
-
-    const stats: UsageStats = {
-      posts_generated: postsCount ?? 0,
-      posts_limit: limits.posts,
-      ideas_generated: ideasCount ?? 0,
-      ideas_limit: limits.ideas,
-      period_start: periodStart,
-      period_end: periodEnd,
+    const info: UsageInfo = {
+      used:      profile?.generations_used_this_month ?? 0,
+      limit,
+      plan,
+      resetDate: profile?.generations_reset_date ?? '',
     }
 
-    return NextResponse.json(stats)
+    return NextResponse.json(info)
   } catch (error) {
     console.error('GET /api/user/usage error:', error)
     return NextResponse.json({ error: 'Failed to fetch usage' }, { status: 500 })

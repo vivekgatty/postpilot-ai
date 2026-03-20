@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { Post } from '@/types'
+import type { CreatePostInput } from '@/types'
 
 export async function GET() {
   try {
@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json() as Partial<Post>
-    const { content, tone, status = 'draft', scheduled_at } = body
+    const body = await req.json() as CreatePostInput
+    const { content, tone, status = 'draft', scheduled_for, title, niche, topic_input, generation_index } = body
 
     if (!content) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 })
@@ -49,10 +49,11 @@ export async function POST(req: NextRequest) {
         content,
         tone,
         status,
-        scheduled_at,
-        likes: 0,
-        comments: 0,
-        impressions: 0,
+        scheduled_for,
+        title,
+        niche,
+        topic_input,
+        generation_index,
       })
       .select()
       .single()

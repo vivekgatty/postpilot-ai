@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { UserProfile } from '@/types'
+import type { Profile } from '@/types'
 
 export async function GET() {
   try {
@@ -35,7 +35,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json() as Partial<UserProfile>
+    const body = await req.json() as Partial<Profile>
 
     const { data, error } = await supabase
       .from('profiles')
