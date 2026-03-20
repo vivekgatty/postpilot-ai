@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import Sidebar from './Sidebar'
 import Avatar from '@/components/ui/Avatar'
 import UsageMeter from '@/components/features/UsageMeter'
+import { ToastProvider } from '@/components/ui/Toast'
 import type { Profile } from '@/types'
 
 // ── Pathname → page title map ─────────────────────────────────────────────────
@@ -117,34 +118,36 @@ export default function DashboardShell({ children, profile }: DashboardShellProp
   const title    = getPageTitle(pathname)
 
   return (
-    <div className="min-h-screen bg-[#F8F8F6]">
-      <Sidebar profile={profile} />
+    <ToastProvider>
+      <div className="min-h-screen bg-[#F8F8F6]">
+        <Sidebar profile={profile} />
 
-      {/* Right column: topbar + main */}
-      <div className="pl-60 flex flex-col min-h-screen">
+        {/* Right column: topbar + main */}
+        <div className="pl-60 flex flex-col min-h-screen">
 
-        {/* Top bar — 56px */}
-        <header className="h-14 bg-white border-b border-[#E5E4E0] flex items-center justify-between px-6 sticky top-0 z-20 flex-shrink-0">
-          <h1 className="text-sm font-semibold text-[#0A2540]">{title}</h1>
+          {/* Top bar — 56px */}
+          <header className="h-14 bg-white border-b border-[#E5E4E0] flex items-center justify-between px-6 sticky top-0 z-20 flex-shrink-0">
+            <h1 className="text-sm font-semibold text-[#0A2540]">{title}</h1>
 
-          <div className="flex items-center gap-4">
-            {/* Usage meter (inline variant) */}
-            <UsageMeter
-              used={profile?.generations_used_this_month ?? 0}
-              plan={profile?.plan ?? 'free'}
-              resetDate={profile?.generations_reset_date ?? undefined}
-              variant="inline"
-            />
+            <div className="flex items-center gap-4">
+              {/* Usage meter (inline variant) */}
+              <UsageMeter
+                used={profile?.generations_used_this_month ?? 0}
+                plan={profile?.plan ?? 'free'}
+                resetDate={profile?.generations_reset_date ?? undefined}
+                variant="inline"
+              />
 
-            <AvatarDropdown profile={profile} />
-          </div>
-        </header>
+              <AvatarDropdown profile={profile} />
+            </div>
+          </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
+          {/* Page content */}
+          <main className="flex-1 overflow-y-auto p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   )
 }

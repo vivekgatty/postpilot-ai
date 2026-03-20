@@ -1,56 +1,167 @@
 'use client'
 
-import { useEffect } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react'
+import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export type ToastType = 'success' | 'error' | 'info' | 'warning'
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-interface ToastProps {
-  message: string
-  type?: ToastType
-  onClose: () => void
+export type ToastType = 'success' | 'error' | 'warning' | 'info'
+
+interface ToastItem {
+  id:       number
+  message:  string
+  type:     ToastType
+  duration: number
+}
+
+interface ToastOptions {
   duration?: number
 }
 
-export default function Toast({
-  message,
-  type = 'info',
+interface ToastAPI {
+  success: (message: string, opts?: ToastOptions) => void
+  error:   (message: string, opts?: ToastOptions) => void
+  warning: (message: string, opts?: ToastOptions) => void
+  info:    (message: string, opts?: ToastOptions) => void
+}
+
+interface ToastContextValue {
+  toast: ToastAPI
+}
+
+// ── Context ────────────────────────────────────────────────────────────────────
+
+const ToastContext = createContext<ToastContextValue | null>(null)
+
+// ── Colours ────────────────────────────────────────────────────────────────────
+
+const COLORS: Record<ToastType, { bg: string; icon: string }> = {
+  success: { bg: 'bg-[#1D9E75]', icon: '✓' },
+  error:   { bg: 'bg-[#E24B4A]', icon: '✕' },
+  warning: { bg: 'bg-[#BA7517]', icon: '⚠' },
+  info:    { bg: 'bg-[#378ADD]', icon: 'ℹ' },
+}
+
+// ── Single toast bubble ────────────────────────────────────────────────────────
+
+function ToastBubble({
+  item,
   onClose,
-  duration = 4000,
-}: ToastProps) {
+}: {
+  item:    ToastItem
+  onClose: (id: number) => void
+}) {
+  const [visible, setVisible]   = useState(false)
+  const timerRef                = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Slide in on mount
   useEffect(() => {
-    const timer = setTimeout(onClose, duration)
-    return () => clearTimeout(timer)
-  }, [onClose, duration])
+    const raf = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
-  const styles = {
-    success: 'bg-[#1D9E75] text-white',
-    error: 'bg-red-600 text-white',
-    info: 'bg-[#0A2540] text-white',
-    warning: 'bg-amber-500 text-white',
+  // Auto-dismiss
+  useEffect(() => {
+    timerRef.current = setTimeout(() => {
+      setVisible(false)
+      setTimeout(() => onClose(item.id), 300)
+    }, item.duration)
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [item.id, item.duration, onClose])
+
+  const dismiss = () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setVisible(false)
+    setTimeout(() => onClose(item.id), 300)
   }
 
-  const icons = {
-    success: '✓',
-    error: '✕',
-    info: 'ℹ',
-    warning: '⚠',
-  }
+  const { bg, icon } = COLORS[item.type]
 
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       className={cn(
-        'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg min-w-[280px] animate-slide-up',
-        styles[type]
+        'flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl min-w-[260px] max-w-sm text-white',
+        'transition-all duration-300 ease-out',
+        bg,
+        visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0',
       )}
     >
-      <span className="text-lg font-bold">{icons[type]}</span>
-      <p className="text-sm font-medium flex-1">{message}</p>
-      <button onClick={onClose} className="opacity-70 hover:opacity-100 transition-opacity">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
+      <span className="text-base font-bold flex-shrink-0 leading-none">{icon}</span>
+      <p className="text-sm font-medium flex-1 leading-snug">{item.message}</p>
+      <button
+        type="button"
+        onClick={dismiss}
+        className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity focus:outline-none"
+        aria-label="Dismiss"
+      >
+        <X className="w-3.5 h-3.5" />
       </button>
     </div>
   )
+}
+
+// ── Provider ───────────────────────────────────────────────────────────────────
+
+const MAX_TOASTS = 3
+let _nextId = 0
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([])
+
+  const push = useCallback((message: string, type: ToastType, duration: number) => {
+    const id = ++_nextId
+    setToasts(prev => {
+      const next = [...prev, { id, message, type, duration }]
+      // Drop oldest when over max
+      return next.length > MAX_TOASTS ? next.slice(next.length - MAX_TOASTS) : next
+    })
+  }, [])
+
+  const remove = useCallback((id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
+
+  const toast: ToastAPI = {
+    success: (msg, opts) => push(msg, 'success', opts?.duration ?? 3000),
+    error:   (msg, opts) => push(msg, 'error',   opts?.duration ?? 5000),
+    warning: (msg, opts) => push(msg, 'warning', opts?.duration ?? 3000),
+    info:    (msg, opts) => push(msg, 'info',    opts?.duration ?? 3000),
+  }
+
+  return (
+    <ToastContext.Provider value={{ toast }}>
+      {children}
+      {toasts.length > 0 && (
+        <div
+          aria-label="Notifications"
+          className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 items-end pointer-events-none"
+        >
+          {toasts.map(t => (
+            <div key={t.id} className="pointer-events-auto overflow-hidden">
+              <ToastBubble item={t} onClose={remove} />
+            </div>
+          ))}
+        </div>
+      )}
+    </ToastContext.Provider>
+  )
+}
+
+// ── Hook ───────────────────────────────────────────────────────────────────────
+
+export function useToast(): ToastContextValue {
+  const ctx = useContext(ToastContext)
+  if (!ctx) throw new Error('useToast must be used inside <ToastProvider>')
+  return ctx
 }

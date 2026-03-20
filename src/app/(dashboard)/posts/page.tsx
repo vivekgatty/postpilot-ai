@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
+import { useToast } from '@/components/ui/Toast'
 import {
   Sparkles,
   Search,
@@ -275,6 +276,7 @@ function ActionBtn({
 
 export default function PostsPage() {
   const { posts, loading, updatePost, deletePost, toggleFavourite } = usePosts()
+  const { toast } = useToast()
 
   // Filter / sort state
   const [activeTab,    setActiveTab]    = useState<TabKey>('all')
@@ -367,9 +369,9 @@ export default function PostsPage() {
         next.delete(id)
         return next
       })
-      if (error) console.error('Delete failed:', error)
+      if (error) toast.error('Failed to delete post — please try again')
     }, 240)
-  }, [deleteTarget, deletePost])
+  }, [deleteTarget, deletePost, toast])
 
   // ── Render ────────────────────────────────────────────────────────────────
 
