@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import PricingTable   from '@/components/features/PricingTable'
 import Modal          from '@/components/ui/Modal'
 import { NICHE_OPTIONS } from '@/lib/constants'
-import type { Profile, PlanType, NotificationPrefs, Subscription } from '@/types'
+import Image          from 'next/image'
+import type { Profile, NotificationPrefs, Subscription } from '@/types'
 
 // ── Inline toast ──────────────────────────────────────────────────────────────
 
@@ -327,9 +328,11 @@ export default function SettingsPage() {
               title="Click to change avatar"
             >
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt="Avatar"
+                  width={64}
+                  height={64}
                   className="w-16 h-16 rounded-full object-cover border-2 border-gray-100
                              group-hover:opacity-80 transition-opacity"
                 />
