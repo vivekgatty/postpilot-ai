@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { LogOut, Settings } from 'lucide-react'
+import { LogOut, Settings, Menu, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Sidebar from './Sidebar'
 import Avatar from '@/components/ui/Avatar'
@@ -24,9 +24,7 @@ const TITLE_MAP: Record<string, string> = {
 }
 
 function getPageTitle(pathname: string): string {
-  // Exact match first
   if (TITLE_MAP[pathname]) return TITLE_MAP[pathname]
-  // Prefix match (e.g. /posts/123 → My Posts)
   const key = Object.keys(TITLE_MAP).find(k => pathname.startsWith(`${k}/`))
   return key ? TITLE_MAP[key] : ''
 }
@@ -38,7 +36,6 @@ function AvatarDropdown({ profile }: { profile: Profile | null }) {
   const dropRef           = useRef<HTMLDivElement>(null)
   const router            = useRouter()
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
@@ -114,36 +111,85 @@ interface DashboardShellProps {
 }
 
 export default function DashboardShell({ children, profile }: DashboardShellProps) {
-  const pathname = usePathname()
-  const title    = getPageTitle(pathname)
+  const pathname          = usePathname()
+  const title             = getPageTitle(pathname)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // Close drawer on route change
+  useEffect(() => { setDrawerOpen(false) }, [pathname])
 
   return (
     <ToastProvider>
       <div className="min-h-screen bg-[#F8F8F6]">
-        <Sidebar profile={profile} />
 
-        {/* Right column: topbar + main */}
-        <div className="pl-60 flex flex-col min-h-screen">
+        {/* ── Desktop sidebar (lg+) ────────────────────────────────────────── */}
+        <div className="hidden lg:block">
+          <Sidebar profile={profile} />
+        </div>
+
+        {/* ── Mobile drawer backdrop ───────────────────────────────────────── */}
+        {drawerOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+            onClick={() => setDrawerOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* ── Mobile sidebar drawer ────────────────────────────────────────── */}
+        <div
+          className={[
+            'fixed inset-y-0 left-0 z-50 lg:hidden transition-transform duration-300 ease-in-out',
+            drawerOpen ? 'translate-x-0' : '-translate-x-full',
+          ].join(' ')}
+        >
+          {/* Close button inside drawer */}
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(false)}
+            className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <Sidebar profile={profile} />
+        </div>
+
+        {/* ── Right column: topbar + main ──────────────────────────────────── */}
+        <div className="lg:pl-60 flex flex-col min-h-screen">
 
           {/* Top bar — 56px */}
-          <header className="h-14 bg-white border-b border-[#E5E4E0] flex items-center justify-between px-6 sticky top-0 z-20 flex-shrink-0">
-            <h1 className="text-sm font-semibold text-[#0A2540]">{title}</h1>
+          <header className="h-14 bg-white border-b border-[#E5E4E0] flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              {/* Hamburger — mobile only */}
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none"
+                aria-label="Open menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <h1 className="text-sm font-semibold text-[#0A2540]">{title}</h1>
+            </div>
 
-            <div className="flex items-center gap-4">
-              {/* Usage meter (inline variant) */}
-              <UsageMeter
-                used={profile?.generations_used_this_month ?? 0}
-                plan={profile?.plan ?? 'free'}
-                resetDate={profile?.generations_reset_date ?? undefined}
-                variant="inline"
-              />
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Usage meter (inline variant) — hidden on very small screens */}
+              <div className="hidden sm:block">
+                <UsageMeter
+                  used={profile?.generations_used_this_month ?? 0}
+                  plan={profile?.plan ?? 'free'}
+                  resetDate={profile?.generations_reset_date ?? undefined}
+                  variant="inline"
+                />
+              </div>
 
               <AvatarDropdown profile={profile} />
             </div>
           </header>
 
           {/* Page content */}
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
             {children}
           </main>
         </div>
