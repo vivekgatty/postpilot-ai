@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-primary: #1D9E75;
+  --brand-navy: #0A2540;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply text-gray-900 bg-white;
+  }
+}
+
+@layer utilities {
+  .font-poppins {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+  }
+
+  .text-brand {
+    color: var(--brand-primary);
+  }
+
+  .bg-brand {
+    background-color: var(--brand-primary);
+  }
+
+  .text-navy {
+    color: var(--brand-navy);
+  }
+
+  .bg-navy {
+    background-color: var(--brand-navy);
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(1rem);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.2s ease-out;
+  }
+}

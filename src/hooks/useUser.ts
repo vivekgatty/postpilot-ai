@@ -1,0 +1,42 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import type { UserProfile } from '@/types'
+
+export function useUser() {
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    async function fetchUser() {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
+
+      setUser(data as UserProfile | null)
+      setLoading(false)
+    }
+
+    fetchUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      fetchUser()
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  return { user, loading }
+}
