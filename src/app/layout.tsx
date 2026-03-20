@@ -4,20 +4,44 @@ import './globals.css'
 
 const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['300', '400', '500', '600', '700', '800'],
   variable: '--font-poppins',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
-  title: 'PostPika — LinkedIn AI for Indian Professionals',
-  description:
-    'Generate compelling LinkedIn posts tailored for Indian professionals. Powered by AI, in your language.',
   metadataBase: new URL('https://postpika.com'),
+  title: {
+    default: 'PostPika — AI LinkedIn Posts for Indian Professionals',
+    template: '%s | PostPika',
+  },
+  description:
+    'Generate 3 viral LinkedIn post variations in 30 seconds. AI-powered content tool for Indian founders, consultants and professionals. Start free, no card needed.',
+  keywords: [
+    'LinkedIn AI tool India',
+    'LinkedIn post generator India',
+    'AI content creator LinkedIn India',
+    'PostPika',
+    'personal brand LinkedIn India',
+  ],
   openGraph: {
-    title: 'PostPika — LinkedIn AI for Indian Professionals',
-    description: 'Generate compelling LinkedIn posts tailored for Indian professionals.',
+    type: 'website',
+    locale: 'en_IN',
     url: 'https://postpika.com',
     siteName: 'PostPika',
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
   },
 }
 
