@@ -1,67 +1,192 @@
 'use client'
 
-import type { Post, PostStatus } from '@/types'
-import { Card } from '@/components/ui/Card'
-import Badge from '@/components/ui/Badge'
-import Button from '@/components/ui/Button'
-import { formatDate, truncate } from '@/lib/utils'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Copy, Check, CalendarPlus, Loader2, BookmarkPlus } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { GeneratedPost, ToneType } from '@/types'
 
-interface PostCardProps {
-  post: Post
-  onEdit?: (post: Post) => void
-  onDelete?: (id: string) => void
-  onToggleFavourite?: (id: string) => void
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const VARIATION_COLORS: Record<number, string> = {
+  1: 'bg-purple-50 text-purple-600',
+  2: 'bg-blue-50  text-blue-600',
+  3: 'bg-[#1D9E75]/10 text-[#1D9E75]',
 }
 
-const STATUS_VARIANT: Record<PostStatus, 'default' | 'warning' | 'success' | 'outline'> = {
-  draft:     'default',
-  scheduled: 'warning',
-  published: 'success',
-  archived:  'outline',
+function variationColor(n: number) {
+  return VARIATION_COLORS[n] ?? 'bg-gray-100 text-gray-600'
 }
 
-export default function PostCard({ post, onEdit, onDelete, onToggleFavourite }: PostCardProps) {
+const TONE_LABEL: Record<ToneType, string> = {
+  professional:  'Professional',
+  storytelling:  'Storytelling',
+  controversial: 'Controversial',
+  educational:   'Educational',
+  inspirational: 'Inspirational',
+}
+
+function charCountColor(n: number) {
+  if (n <= 1300) return 'text-[#1D9E75]'
+  if (n <= 2000) return 'text-amber-500'
+  return 'text-red-500'
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+
+export interface PostCardProps {
+  post:      GeneratedPost
+  tone:      ToneType
+  onSave:    () => void
+  onCopy:    () => void
+  isSaving:  boolean
+  isPaid:    boolean
+  /** If true the save button shows a "Saved ✓" confirmation */
+  isSaved?:  boolean
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function PostCard({
+  post,
+  tone,
+  onSave,
+  onCopy,
+  isSaving,
+  isPaid,
+  isSaved = false,
+}: PostCardProps) {
+  const router        = useRouter()
+  const [copied, setCopied] = useState(false)
+
+  const charCount = post.content.length
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(post.content)
+    } catch {
+      // fallback for older browsers
+      const el = document.createElement('textarea')
+      el.value = post.content
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
+    setCopied(true)
+    onCopy()
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleSchedule = () => {
+    const encoded = encodeURIComponent(post.content)
+    router.push(`/calendar?post=${encoded}`)
+  }
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <Badge variant={STATUS_VARIANT[post.status]}>
-          {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
-        </Badge>
-        <div className="flex items-center gap-2">
-          {onToggleFavourite && (
-            <button
-              type="button"
-              onClick={() => onToggleFavourite(post.id)}
-              className={post.is_favourite ? 'text-amber-400' : 'text-gray-300 hover:text-amber-400'}
-              aria-label={post.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
-            >
-              ★
-            </button>
+    <div className={cn(
+      'group bg-white rounded-2xl border border-[#E5E4E0] overflow-hidden',
+      'transition-all duration-150 hover:border-[#1D9E75]/40 hover:shadow-sm',
+    )}>
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[#E5E4E0]">
+        {/* Variation pill */}
+        <span className={cn(
+          'inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold',
+          variationColor(post.variation),
+        )}>
+          Variation {post.variation}
+        </span>
+
+        {/* Tone badge */}
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-500">
+          {TONE_LABEL[tone]}
+        </span>
+      </div>
+
+      {/* ── Content ────────────────────────────────────────────────────────── */}
+      <div className="px-5 py-4">
+        <p
+          className="text-sm text-gray-800 whitespace-pre-wrap"
+          style={{ lineHeight: 1.7 }}
+        >
+          {post.content}
+        </p>
+      </div>
+
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <div className="px-5 pb-4 space-y-3">
+
+        {/* Character counter */}
+        <div className="flex items-center justify-between">
+          <span className={cn('text-xs font-medium tabular-nums', charCountColor(charCount))}>
+            {charCount.toLocaleString()} / 3,000 chars
+          </span>
+          {charCount > 3000 && (
+            <span className="text-[10px] text-red-500 font-medium">Over LinkedIn limit</span>
           )}
-          <span className="text-xs text-gray-400">{formatDate(post.created_at)}</span>
         </div>
-      </div>
 
-      <p className="text-sm text-gray-700 leading-relaxed mb-4">
-        {truncate(post.content, 180)}
-      </p>
+        {/* Action row */}
+        <div className="flex items-center gap-2">
 
-      {post.character_count !== null && (
-        <p className="text-xs text-gray-400 mb-3">{post.character_count} chars</p>
-      )}
+          {/* Copy */}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 focus:outline-none',
+              copied
+                ? 'bg-[#1D9E75]/10 border-[#1D9E75]/30 text-[#1D9E75]'
+                : 'bg-white border-[#E5E4E0] text-gray-600 hover:border-[#1D9E75]/50 hover:text-[#0A2540]',
+            )}
+          >
+            {copied
+              ? <><Check className="w-3.5 h-3.5" /> Copied</>
+              : <><Copy className="w-3.5 h-3.5" /> Copy</>
+            }
+          </button>
 
-      <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
-        {onEdit && (
-          <Button size="sm" variant="ghost" onClick={() => onEdit(post)}>
-            Edit
-          </Button>
+          {/* Save Draft */}
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={isSaving || isSaved}
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 focus:outline-none',
+              isSaved
+                ? 'bg-[#1D9E75] text-white border border-[#1D9E75] cursor-default'
+                : 'bg-[#1D9E75] hover:bg-[#178a64] text-white border border-[#1D9E75] disabled:opacity-60 disabled:cursor-not-allowed',
+            )}
+          >
+            {isSaving ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+            ) : isSaved ? (
+              <><Check className="w-3.5 h-3.5" /> Saved ✓</>
+            ) : (
+              <><BookmarkPlus className="w-3.5 h-3.5" /> Save Draft</>
+            )}
+          </button>
+
+          {/* Schedule */}
+          <button
+            type="button"
+            onClick={handleSchedule}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#E5E4E0] text-gray-600 hover:border-[#1D9E75]/50 hover:text-[#0A2540] bg-white transition-all duration-150 focus:outline-none ml-auto"
+          >
+            <CalendarPlus className="w-3.5 h-3.5" />
+            Schedule
+          </button>
+        </div>
+
+        {/* Watermark — free plan only */}
+        {!isPaid && (
+          <p className="text-[10px] text-gray-300 text-right select-none pt-0.5">
+            Made with PostPika
+          </p>
         )}
-        {onDelete && (
-          <Button size="sm" variant="ghost" onClick={() => onDelete(post.id)}>
-            Delete
-          </Button>
-        )}
       </div>
-    </Card>
+    </div>
   )
 }
