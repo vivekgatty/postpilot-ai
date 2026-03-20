@@ -128,11 +128,22 @@ export const LANGUAGES = [
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 export const NAV_ITEMS = [
-  { href: '/dashboard',  label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/generate',   label: 'Generate',  icon: 'Wand2'           },
-  { href: '/calendar',   label: 'Calendar',  icon: 'Calendar'        },
-  { href: '/posts',      label: 'Posts',     icon: 'FileText'        },
-  { href: '/ideas',      label: 'Ideas',     icon: 'Lightbulb'       },
-  { href: '/analytics',  label: 'Analytics', icon: 'BarChart2'       },
-  { href: '/settings',   label: 'Settings',  icon: 'Settings'        },
+  { href: '/dashboard',  label: 'Dashboard', icon: 'LayoutDashboard', proOnly: false },
+  { href: '/generate',   label: 'Generate',  icon: 'Sparkles',        proOnly: false },
+  { href: '/posts',      label: 'My Posts',  icon: 'FileText',        proOnly: false },
+  { href: '/calendar',   label: 'Calendar',  icon: 'Calendar',        proOnly: false },
+  { href: '/ideas',      label: 'Idea Lab',  icon: 'Lightbulb',       proOnly: false },
+  { href: '/analytics',  label: 'Analytics', icon: 'BarChart2',       proOnly: true  },
 ] as const
+
+/** Niche metadata for onboarding cards */
+export const NICHE_META: Record<string, { icon: string; example: string }> = {
+  'Tech/SaaS':        { icon: '💻', example: 'For founders, PMs and engineers'          },
+  'Finance':          { icon: '💰', example: 'For bankers, investors and analysts'       },
+  'Marketing':        { icon: '📣', example: 'For marketers and growth leaders'          },
+  'Consulting':       { icon: '🤝', example: 'For consultants, advisors and coaches'     },
+  'HR/Talent':        { icon: '👥', example: 'For HR and talent professionals'           },
+  'Sales':            { icon: '🎯', example: 'For SDRs, AEs and sales leaders'           },
+  'Founder/Startup':  { icon: '🚀', example: 'For founders and entrepreneurs'            },
+  'Other':            { icon: '✨', example: 'For professionals in any other field'      },
+}

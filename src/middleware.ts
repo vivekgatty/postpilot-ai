@@ -2,9 +2,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 // Routes that require an authenticated session
-const PROTECTED_DASHBOARD_PREFIX = '/dashboard'
-
-// Additional dashboard-like paths nested under the (dashboard) route group
 const PROTECTED_PATHS = [
   '/dashboard',
   '/generate',
@@ -26,8 +23,19 @@ const PUBLIC_API_PATHS = [
 const AUTH_PAGES = ['/login', '/signup']
 
 export async function middleware(request: NextRequest) {
-  // Must be mutable so the cookie setter below can replace it
-  let supabaseResponse = NextResponse.next({ request })
+  const { pathname } = request.nextUrl
+
+  // Build request headers that include x-pathname so server components
+  // (e.g. the dashboard layout) can read the current path via headers().
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', pathname)
+
+  // Must be mutable so the cookie setter below can replace it.
+  // Seed with our custom request headers so x-pathname persists through
+  // any session-cookie refresh that recreates the response.
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,12 +46,15 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          // Forward updated cookies to the request first …
+          // Persist refreshed session cookies on the mutable request object
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          // … then recreate the response so cookies are also set there
-          supabaseResponse = NextResponse.next({ request })
+          // Recreate the response, keeping our custom request headers so that
+          // x-pathname is still available to server components after a refresh.
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -53,14 +64,12 @@ export async function middleware(request: NextRequest) {
   )
 
   // IMPORTANT: always call getUser() — never getSession() — in middleware.
-  // This refreshes the session token on every request (PKCe / JWT refresh).
+  // This refreshes the JWT / PKCe token on every request.
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
-
-  // ── 1. Protect /dashboard/* paths ──────────────────────────────────────────
+  // ── 1. Protect dashboard-side routes ────────────────────────────────────────
   const isDashboardPath = PROTECTED_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   )
@@ -72,7 +81,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // ── 2. Protect /api/* (except public API routes) ────────────────────────────
+  // ── 2. Protect /api/* (except public routes) ─────────────────────────────────
   const isApiPath = pathname.startsWith('/api/')
   const isPublicApiPath = PUBLIC_API_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
@@ -82,30 +91,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // ── 3. Bounce authenticated users away from /login and /signup ──────────────
+  // ── 3. Bounce authenticated users away from /login and /signup ───────────────
   const isAuthPage = AUTH_PAGES.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   )
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard/generate'
+    url.pathname = '/generate'
     return NextResponse.redirect(url)
   }
 
-  // Always return the (possibly cookie-refreshed) supabase response
   return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    /*
-     * Run on every path EXCEPT:
-     *  - _next/static  (static assets)
-     *  - _next/image   (image optimisation)
-     *  - favicon.ico
-     *  - public/       (files in /public folder — images, fonts, etc.)
-     */
     '/((?!_next/static|_next/image|favicon\\.ico|public/).*)',
   ],
 }
