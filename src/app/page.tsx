@@ -318,6 +318,105 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── AUDIT SECTION ────────────────────────────────────────────────── */}
+      <section id="audit" className="py-20 px-5 bg-[#F9FFFE]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#1D9E75] mb-3">
+              Personal Brand Audit
+            </p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-[#0A2540] mb-4">
+              What&apos;s your LinkedIn Personal Brand Score?
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto leading-relaxed">
+              Take the free 4-minute audit. Get your score out of 100, your unique rank,
+              and 3 actions to improve this week.
+            </p>
+          </div>
+
+          {/* Tier progression ladder */}
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-12">
+            {([
+              { key: 'ghost_mode',    label: 'Ghost Mode',         range: '0–30',  example: 'Digital Dust', color: '#888780', bg: '#F1EFE8' },
+              { key: 'warming_up',    label: 'Warming Up',         range: '31–50', example: 'The Rookie',   color: '#BA7517', bg: '#FAEEDA' },
+              { key: 'finding_voice', label: 'Finding Your Voice', range: '51–65', example: 'The Strategist', color: '#185FA5', bg: '#E6F1FB' },
+              { key: 'in_the_room',   label: 'In The Room',        range: '66–80', example: 'The Influencer', color: '#534AB7', bg: '#EEEDFE' },
+              { key: 'legend_status', label: 'Legend Status',      range: '81–100', example: 'The Pioneer',  color: '#0F6E56', bg: '#E1F5EE' },
+            ] as const).map((tier, i) => (
+              <div
+                key={tier.key}
+                className="rounded-xl p-4 text-center border"
+                style={{ backgroundColor: tier.bg, borderColor: tier.color + '33' }}
+              >
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white mx-auto mb-2"
+                  style={{ backgroundColor: tier.color }}
+                >
+                  {i + 1}
+                </div>
+                <p className="text-xs font-bold mb-0.5" style={{ color: tier.color }}>
+                  {tier.label}
+                </p>
+                <p className="text-xs text-gray-500">{tier.range} pts</p>
+                <p className="text-[10px] text-gray-400 mt-1 italic">{tier.example}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Sample score cards (static, demo) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-12">
+            {[
+              { name: 'Rahul S.', username: 'rahuls', score: 12, level: 'Digital Dust', tier: 'Ghost Mode', color: '#888780', bg: '#F1EFE8' },
+              { name: 'Priya M.', username: 'priyam', score: 44, level: 'The Contender', tier: 'Warming Up', color: '#BA7517', bg: '#FAEEDA' },
+              { name: 'Arjun K.', username: 'arjunk', score: 78, level: 'The Thought Leader', tier: 'In The Room', color: '#534AB7', bg: '#EEEDFE' },
+            ].map(s => (
+              <div
+                key={s.username}
+                className="rounded-2xl border overflow-hidden shadow-sm"
+                style={{ borderColor: s.color + '44', background: '#fff' }}
+              >
+                <div style={{ height: 5, background: '#1D9E75' }} />
+                <div className="p-5 text-center">
+                  <div
+                    className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold"
+                    style={{ background: s.bg, color: s.color, border: `2px solid ${s.color}` }}
+                  >
+                    {s.name.charAt(0)}
+                  </div>
+                  <p className="text-sm font-bold text-[#0A2540]">{s.name}</p>
+                  <p className="text-xs text-gray-400 mb-3">linkedin.com/in/{s.username}</p>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-4xl font-extrabold" style={{ color: s.color }}>{s.score}</span>
+                    <span className="text-base text-gray-400">/100</span>
+                  </div>
+                  <span
+                    className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold border"
+                    style={{ background: s.bg, color: s.color, borderColor: s.color + '55' }}
+                  >
+                    {s.level}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="text-center">
+            <Link
+              href="/audit"
+              className="inline-flex items-center gap-2 bg-[#1D9E75] hover:bg-[#178a63]
+                         text-white font-semibold text-base px-8 py-4 rounded-xl transition-all
+                         shadow-lg shadow-[#1D9E75]/25 active:scale-[0.98]"
+            >
+              Get my free score →
+            </Link>
+            <p className="mt-3 text-sm text-gray-400">
+              Used by 1,000+ Indian professionals · Free · No login required
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── FEATURES ─────────────────────────────────────────────────────── */}
       <section id="features" className="py-20 px-5 bg-[#F9FFFE]">
         <div className="max-w-5xl mx-auto">

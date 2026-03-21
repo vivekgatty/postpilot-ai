@@ -24,6 +24,7 @@ Confirm all variables are set for the **Production** environment (not just Previ
 | `RESEND_API_KEY` | From resend.com → API Keys |
 | `FROM_EMAIL` | e.g. `PostPika <hello@postpika.com>` — domain must be verified in Resend |
 | `NEXT_PUBLIC_APP_URL` | `https://postpika.com` (no trailing slash) |
+| `CRON_SECRET` | Any random 32-character string — used to authenticate the Vercel cron job at `/api/cron/audit-reminders`. Generate one at: `openssl rand -hex 16` |
 
 > **Tip:** In Vercel → Project → Settings → Environment Variables, set each variable's scope to **Production** (and optionally Preview). Do not set `SUPABASE_SERVICE_ROLE_KEY` in Preview/Development scopes.
 
@@ -126,7 +127,80 @@ https://postpika.com/api/auth/callback
 
 ---
 
-## 9 · Post-Deploy Smoke Tests
+## 9 · Supabase — Brand Audit Tables (run before deploying)
+
+Run the following SQL in the Supabase SQL Editor to create the brand audit tables:
+
+```sql
+-- brand_audits table
+CREATE TABLE brand_audits (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  linkedin_url        TEXT NOT NULL,
+  linkedin_username   TEXT NOT NULL,
+  full_name           TEXT,
+  profile_photo_url   TEXT,
+  email               TEXT,
+  answers             JSONB NOT NULL DEFAULT '{}',
+  sample_post_content TEXT,
+  sample_post_url     TEXT,
+  total_score         INTEGER NOT NULL DEFAULT 0,
+  tier_key            TEXT,
+  tier_label          TEXT,
+  level_name          TEXT,
+  level_key           TEXT,
+  scores              JSONB,
+  ai_top_actions      JSONB,
+  ai_content_quality  JSONB,
+  share_token         TEXT NOT NULL UNIQUE,
+  is_unlocked         BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- audit_improvement_emails table
+CREATE TABLE audit_improvement_emails (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  audit_id       UUID NOT NULL REFERENCES brand_audits(id) ON DELETE CASCADE,
+  email          TEXT NOT NULL,
+  scheduled_for  TIMESTAMPTZ NOT NULL,
+  sent           BOOLEAN NOT NULL DEFAULT FALSE,
+  sent_at        TIMESTAMPTZ,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_brand_audits_linkedin_url ON brand_audits(linkedin_url);
+CREATE INDEX idx_brand_audits_share_token  ON brand_audits(share_token);
+CREATE INDEX idx_brand_audits_email        ON brand_audits(email);
+CREATE INDEX idx_brand_audits_user_id      ON brand_audits(user_id);
+CREATE INDEX idx_audit_improvement_sent    ON audit_improvement_emails(sent, scheduled_for);
+
+-- RLS: public read by share_token (unlocked only)
+ALTER TABLE brand_audits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read unlocked audits by share_token"
+  ON brand_audits FOR SELECT
+  USING (is_unlocked = TRUE);
+
+CREATE POLICY "Service role has full access to brand_audits"
+  ON brand_audits FOR ALL
+  TO service_role
+  USING (TRUE)
+  WITH CHECK (TRUE);
+
+ALTER TABLE audit_improvement_emails ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role has full access to audit_improvement_emails"
+  ON audit_improvement_emails FOR ALL
+  TO service_role
+  USING (TRUE)
+  WITH CHECK (TRUE);
+```
+
+> **Note:** The API routes use `createClient()` (anon key with SSR). For writes in unauthenticated contexts, you may need to use the service role key. If inserts fail, switch the route to use `createServiceClient()` with `SUPABASE_SERVICE_ROLE_KEY`.
+
+---
+
+## 10 · Post-Deploy Smoke Tests
 
 After deploying to production, manually verify:
 

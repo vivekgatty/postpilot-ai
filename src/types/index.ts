@@ -283,3 +283,47 @@ export interface SavedHook {
   niche: string
   created_at: string
 }
+
+// ─── Personal Brand Audit ──────────────────────────────────────────────────────
+
+export interface AuditAnswer {
+  questionId: string
+  value: string
+  points: number
+}
+
+export interface AuditDimensionScore {
+  dimension: string
+  label: string
+  earned: number
+  max: number
+  percentage: number
+  feedback: string
+}
+
+export interface AuditResult {
+  id: string
+  linkedin_url: string
+  linkedin_username: string
+  full_name: string | null
+  profile_photo_url: string | null
+  sample_post_content: string | null
+  total_score: number
+  tier_key: string
+  tier_label: string
+  level_name: string
+  level_key: string
+  dimension_scores: AuditDimensionScore[]
+  ai_top_actions: string[]
+  ai_content_quality: {
+    hook_score: number
+    readability_score: number
+    value_score: number
+    cta_score: number
+    authenticity_score: number
+    feedback: string
+  } | null
+  is_unlocked: boolean
+  share_token: string
+  created_at: string
+}
