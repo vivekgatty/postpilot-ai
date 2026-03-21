@@ -17,6 +17,7 @@ const PROTECTED_PATHS = [
 const PUBLIC_API_PATHS = [
   '/api/auth/callback',
   '/api/billing/webhook',
+  '/api/linkedin/callback',
 ]
 
 // Auth pages — authenticated users should be bounced away from these
