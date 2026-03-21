@@ -1,5 +1,8 @@
 import type { NicheType, PlanType, PricingPlan, ToneType, ToneConfig, FormatConfig } from '@/types'
 
+// Re-export hook styles from dedicated file so existing imports keep working
+export { HOOK_STYLES, HOOK_CATEGORIES } from '@/lib/hookStyles'
+
 // ─── Brand ────────────────────────────────────────────────────────────────────
 
 export const BRAND = {
@@ -128,12 +131,13 @@ export const LANGUAGES = [
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 export const NAV_ITEMS = [
-  { href: '/dashboard',  label: 'Dashboard', icon: 'LayoutDashboard', proOnly: false },
-  { href: '/generate',   label: 'Generate',  icon: 'Sparkles',        proOnly: false },
-  { href: '/posts',      label: 'My Posts',  icon: 'FileText',        proOnly: false },
-  { href: '/calendar',   label: 'Calendar',  icon: 'Calendar',        proOnly: false },
-  { href: '/ideas',      label: 'Idea Lab',  icon: 'Lightbulb',       proOnly: false },
-  { href: '/analytics',  label: 'Analytics', icon: 'BarChart2',       proOnly: true  },
+  { href: '/dashboard',  label: 'Dashboard',  icon: 'LayoutDashboard', proOnly: false },
+  { href: '/generate',   label: 'Generate',   icon: 'Sparkles',        proOnly: false },
+  { href: '/hooks',      label: 'Hook Writer', icon: 'Anchor',         proOnly: false },
+  { href: '/posts',      label: 'My Posts',   icon: 'FileText',        proOnly: false },
+  { href: '/calendar',   label: 'Calendar',   icon: 'Calendar',        proOnly: false },
+  { href: '/ideas',      label: 'Idea Lab',   icon: 'Lightbulb',       proOnly: false },
+  { href: '/analytics',  label: 'Analytics',  icon: 'BarChart2',       proOnly: true  },
 ] as const
 
 /** Niche metadata for onboarding cards */
@@ -257,3 +261,13 @@ export const SKELETON_SECTION_DEFAULTS: Record<string, { label: string; instruct
     { label: 'Structure', instruction: 'Describe exactly how you want your post structured. Be as specific as possible about the order, length, and content of each section.' },
   ],
 }
+
+
+export const HOOK_GOALS = [
+  { id: 'comments',     label: 'Drive Comments',       description: 'Maximise discussion and replies' },
+  { id: 'credibility',  label: 'Build Credibility',    description: 'Establish authority and trust' },
+  { id: 'followers',    label: 'Grow Followers',       description: 'Attract the right audience' },
+  { id: 'leads',        label: 'Generate Leads',       description: 'Bring in potential clients' },
+  { id: 'story',        label: 'Tell a Story',         description: 'Build emotional connection' },
+  { id: 'debate',       label: 'Spark Debate',         description: 'Get people taking sides' },
+] as const

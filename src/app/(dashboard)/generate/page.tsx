@@ -95,10 +95,13 @@ function GeneratePageInner() {
   const [usage, setUsage] = useState<UsageInfo | null>(null)
   const { toast }         = useToast()
 
-  // ── Pre-fill from ?topic= ────────────────────────────────────────────────
+  // ── Pre-fill from ?topic= or ?hook= ─────────────────────────────────────
+  const [fromHook, setFromHook] = useState(false)
   useEffect(() => {
     const t = searchParams.get('topic')
-    if (t) setTopic(decodeURIComponent(t))
+    const h = searchParams.get('hook')
+    if (h) { setTopic(decodeURIComponent(h)); setFromHook(true) }
+    else if (t) setTopic(decodeURIComponent(t))
   }, [searchParams])
 
   // ── Load profile, usage, custom data ─────────────────────────────────────
@@ -284,9 +287,24 @@ function GeneratePageInner() {
 
         {/* Topic */}
         <div>
-          <label htmlFor="topic" className="block text-sm font-semibold text-[#0A2540] mb-1.5">
-            What do you want to post about?
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="topic" className="block text-sm font-semibold text-[#0A2540]">
+              What do you want to post about?
+            </label>
+            {!fromHook && (
+              <a
+                href="/hooks"
+                className="text-[10px] font-medium text-[#1D9E75] hover:underline flex-shrink-0"
+              >
+                Need a hook first? →
+              </a>
+            )}
+          </div>
+          {fromHook && (
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] text-[#0F6E56] bg-[#E1F5EE] rounded-lg px-3 py-1.5">
+              <span>Building a full post around your hook. Add more context below if needed.</span>
+            </div>
+          )}
           <textarea
             id="topic" ref={textareaRef} value={topic}
             onChange={(e) => { setTopic(e.target.value); adjustTextarea() }}

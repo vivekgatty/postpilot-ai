@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { GeneratedPost } from '@/types'
+import type { GeneratedPost, HookResult } from '@/types'
 
 export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -131,4 +131,101 @@ Example format: ["Idea 1", "Idea 2", ...]`,
   } catch {
     return block.text.split('\n').filter(Boolean).slice(0, count)
   }
+}
+
+// ── Hook generation ───────────────────────────────────────────────────────────
+
+export interface HookStyleInput {
+  id:       string
+  label:    string
+  category: string
+  template: string
+}
+
+export interface GenerateHooksResult {
+  hooks:      HookResult[]
+  tokensUsed: number
+}
+
+export async function generateHooks(
+  idea:           string,
+  niche:          string,
+  goal:           string,
+  styles:         HookStyleInput[],
+): Promise<GenerateHooksResult> {
+  const GOAL_DESCRIPTIONS: Record<string, string> = {
+    comments:    'Maximise comments and discussion',
+    credibility: 'Build authority and credibility in the niche',
+    followers:   'Attract new followers from the target audience',
+    leads:       'Generate inbound leads or enquiries',
+    story:       'Build emotional connection through storytelling',
+    debate:      'Spark healthy debate and contrasting viewpoints',
+  }
+
+  const goalDesc = GOAL_DESCRIPTIONS[goal] ?? goal
+
+  const styleList = styles.map((s, i) =>
+    `${i + 1}. id="${s.id}" | Style: "${s.label}" (${s.category}) | Template: ${s.template}`
+  ).join('\n')
+
+  const systemPrompt =
+    'You are an elite LinkedIn copywriter specialising in scroll-stopping opening lines for Indian professionals. ' +
+    'You write hooks that feel authentic, human, and impossible to scroll past. ' +
+    'Never use hollow phrases like "In today\'s world", "I want to share", or "Have you ever". ' +
+    'Reference Indian context (companies, cities, ₹) only when it genuinely fits — never force it.'
+
+  const userMessage = `Write one LinkedIn hook line for each of the following hook styles.
+
+POST IDEA: ${idea}
+NICHE: ${niche}
+GOAL: ${goalDesc}
+
+HOOK STYLES TO WRITE:
+${styleList}
+
+REQUIREMENTS:
+- Each hook is a single opening line (or 2 short lines max)
+- 80–160 characters each
+- Directly relevant to the post idea
+- Match the style's energy and template pattern
+- Sound like a real Indian professional wrote it
+- Never start with "I want to share" or "In today's world"
+
+Return ONLY valid JSON — no markdown, no explanation:
+{"hooks":[{"styleId":"...","content":"..."},...]}`
+
+  const msg = await anthropic.messages.create({
+    model:      AI_MODEL,
+    max_tokens: 1024,
+    system:     systemPrompt,
+    messages:   [{ role: 'user', content: userMessage }],
+  })
+
+  const block = msg.content[0]
+  if (block.type !== 'text') throw new Error('Unexpected Anthropic response type')
+
+  const tokensUsed = msg.usage.input_tokens + msg.usage.output_tokens
+
+  let parsed: { hooks: Array<{ styleId: string; content: string }> }
+  try {
+    parsed = JSON.parse(extractJSON(block.text))
+  } catch {
+    throw new Error('Failed to parse hooks response from AI')
+  }
+
+  const styleMap = new Map(styles.map(s => [s.id, s]))
+
+  const hooks: HookResult[] = parsed.hooks.map(h => {
+    const style = styleMap.get(h.styleId)
+    return {
+      id:             `${h.styleId}-${Date.now()}`,
+      styleId:        h.styleId,
+      styleLabel:     style?.label ?? h.styleId,
+      category:       style?.category ?? '',
+      content:        h.content,
+      characterCount: h.content.length,
+    }
+  })
+
+  return { hooks, tokensUsed }
 }
