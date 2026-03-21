@@ -113,7 +113,60 @@ Keep `http://localhost:3000/api/auth/callback` for local development.
 Add to **Authorized redirect URLs**:
 ```
 https://postpika.com/api/auth/callback
+https://postpika.com/api/linkedin/callback
+http://localhost:3000/api/linkedin/callback
 ```
+
+---
+
+## 11 · Content Planner — LinkedIn Direct Posting
+
+### New Environment Variables (add to Vercel → Production)
+
+| Variable | Notes |
+|---|---|
+| `LINKEDIN_CLIENT_ID` | From LinkedIn Developer App → Auth tab |
+| `LINKEDIN_CLIENT_SECRET` | From LinkedIn Developer App → Auth tab (keep secret, never expose) |
+| `LINKEDIN_REDIRECT_URI` | Must be set to: `https://postpika.com/api/linkedin/callback` |
+
+> `CRON_SECRET` already exists from the audit feature. The same secret is now used for both cron jobs (`/api/cron/audit-reminders` and `/api/cron/linkedin-publisher`).
+
+### Local Development
+
+Add to `.env.local`:
+```
+LINKEDIN_CLIENT_ID=your_client_id_here
+LINKEDIN_CLIENT_SECRET=your_client_secret_here
+LINKEDIN_REDIRECT_URI=http://localhost:3000/api/linkedin/callback
+```
+
+### LinkedIn Developer App Setup
+
+1. Go to [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps) → Your App → Auth
+2. Add both redirect URLs:
+   ```
+   http://localhost:3000/api/linkedin/callback
+   https://postpika.com/api/linkedin/callback
+   ```
+3. Ensure the following OAuth 2.0 scopes are enabled under **Products**:
+   - `Sign In with LinkedIn using OpenID Connect` → grants `openid`, `profile`, `email`
+   - `Share on LinkedIn` → grants `w_member_social`
+
+### New Supabase Tables (run SQL before deploying)
+
+The following 6 tables must exist before the planner feature works:
+- `content_pillars` — user content pillar definitions
+- `planner_settings` — per-user planner configuration
+- `planned_posts` — AI-generated and manually created planned posts
+- `content_bank` — saved ideas and hooks
+- `linkedin_connections` — OAuth tokens for direct LinkedIn posting
+- `linkedin_publish_queue` — scheduled posts queue for the cron job
+
+These were provided and run separately in the Supabase SQL Editor.
+
+### Cron Job
+
+A new Vercel cron job runs every 5 minutes at `/api/cron/linkedin-publisher`. It processes the `linkedin_publish_queue` table. The CRON_SECRET header is required (same as audit reminders).
 
 ---
 

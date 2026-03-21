@@ -284,6 +284,107 @@ export interface SavedHook {
   created_at: string
 }
 
+// ─── Content Planner ─────────────────────────────────────────────────────────
+
+export interface ContentPillar {
+  id: string
+  user_id: string
+  name: string
+  description: string
+  color: string
+  weight: 'high' | 'medium' | 'low'
+  tone_id: string
+  position: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface PlannerSettings {
+  user_id: string
+  goals: string[]
+  posting_frequency: number
+  preferred_days: string[]
+  preferred_time: string
+  format_mix: {
+    text: number
+    carousel: number
+    poll: number
+    question: number
+  }
+  setup_completed: boolean
+}
+
+export interface PlannedPost {
+  id: string
+  user_id: string
+  pillar_id: string | null
+  post_id: string | null
+  title: string
+  topic: string
+  hook_suggestion: string
+  format: 'text' | 'carousel' | 'poll' | 'question'
+  tone_id: string
+  why_this_week: string
+  planned_date: string
+  planned_time: string
+  status: 'idea' | 'draft' | 'scheduled' | 'published' | 'missed'
+  linkedin_post_id: string | null
+  linkedin_posted_at: string | null
+  linkedin_post_url: string | null
+  is_recurring: boolean
+  recurring_pattern: string | null
+  pillar?: ContentPillar
+}
+
+export interface ContentBankItem {
+  id: string
+  user_id: string
+  title: string
+  topic: string
+  hook: string
+  pillar_id: string | null
+  format: string
+  source: 'manual' | 'idea_lab' | 'hook_generator' | 'ai_suggestion'
+  is_used: boolean
+  created_at: string
+  pillar?: ContentPillar
+}
+
+export interface LinkedInConnection {
+  user_id: string
+  linkedin_urn: string
+  access_token: string
+  token_expires_at: string
+  scopes: string[]
+  connected_at: string
+}
+
+export interface PublishQueueItem {
+  id: string
+  user_id: string
+  planned_post_id: string
+  post_id: string
+  content: string
+  scheduled_for: string
+  status: 'pending' | 'processing' | 'published' | 'failed' | 'cancelled'
+  linkedin_post_id: string | null
+  linkedin_post_url: string | null
+  error_message: string | null
+  attempts: number
+}
+
+export interface MonthStats {
+  planned: number
+  completed: number
+  missed: number
+  streak: number
+  pillar_distribution: Record<string, number>
+  format_distribution: Record<string, number>
+  variety_score: number
+  format_score: number
+  consistency_score: number
+}
+
 // ─── Personal Brand Audit ──────────────────────────────────────────────────────
 
 export interface AuditAnswer {
