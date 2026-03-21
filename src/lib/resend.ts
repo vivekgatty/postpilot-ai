@@ -276,6 +276,178 @@ function upgradeRow(icon: string, text: string): string {
   </tr>`
 }
 
+// ── 5. Audit result email ─────────────────────────────────────────────────────
+
+export async function sendAuditResultEmail(
+  to:          string,
+  fullName:    string,
+  score:       number,
+  levelName:   string,
+  tierLabel:   string,
+  shareUrl:    string,
+  topActions:  string[],
+  shareToken:  string,
+): Promise<void> {
+  try {
+    const actionRows = topActions
+      .map((a, i) => `<tr><td style="padding:8px 0;font-size:14px;color:#374151;line-height:1.6;vertical-align:top;">
+        <span style="display:inline-block;width:22px;height:22px;background:#1D9E75;color:#fff;border-radius:50%;
+                     text-align:center;line-height:22px;font-size:11px;font-weight:700;margin-right:10px;flex-shrink:0;">${i + 1}</span>
+        ${a}</td></tr>`)
+      .join('')
+
+    await resend.emails.send({
+      from:    FROM,
+      to,
+      subject: `Your LinkedIn Personal Brand Score: ${score}/100 — ${levelName}`,
+      html: layout(`
+        <h1 style="${H1}">Hi ${fullName},</h1>
+        <p style="${P}">Your LinkedIn Personal Brand Audit is complete. Here are your results:</p>
+
+        <!-- Score display -->
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+               style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;margin:0 0 24px;overflow:hidden;">
+          <tr>
+            <td style="padding:24px;text-align:center;">
+              <p style="margin:0;font-size:56px;font-weight:800;color:#1D9E75;line-height:1;">${score}</p>
+              <p style="margin:4px 0 0;font-size:16px;color:#6b7280;">/100</p>
+              <span style="display:inline-block;margin-top:12px;background:#E1F5EE;color:#0F6E56;
+                           font-size:14px;font-weight:700;padding:6px 18px;border-radius:99px;
+                           border:1px solid #0F6E56;">
+                ${levelName}
+              </span>
+              <p style="margin:6px 0 0;font-size:12px;color:#9ca3af;">${tierLabel}</p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Top 3 actions -->
+        <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#0A2540;">
+          Your top 3 actions this week:
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+               style="margin:0 0 24px;">
+          ${actionRows}
+        </table>
+
+        <!-- Share CTA -->
+        <p style="margin:0 0 16px;">
+          <a href="${shareUrl}" style="${BTN}">
+            Share your score →
+          </a>
+        </p>
+
+        <p style="margin:0 0 24px;">
+          <a href="https://postpika.com/audit/result/${shareToken}"
+             style="display:inline-block;color:#1D9E75;text-decoration:none;font-size:14px;font-weight:600;">
+            View your full audit online →
+          </a>
+        </p>
+
+        <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
+          You'll receive personalised improvement tips in 30 days.<br />
+          <a href="https://postpika.com/unsubscribe" style="color:#9ca3af;text-decoration:none;">Unsubscribe anytime</a>
+        </p>
+      `),
+    })
+  } catch (err) {
+    console.error('[sendAuditResultEmail]', err instanceof Error ? err.message : err)
+  }
+}
+
+// ── 6. Improvement email (sent ~30 days after audit) ─────────────────────────
+
+export interface ImprovementSuggestion {
+  title:        string
+  detail:       string
+  dimension:    string
+  points_gain:  string
+}
+
+export async function sendImprovementEmail(
+  to:           string,
+  fullName:     string,
+  currentScore: number,
+  targetScore:  number,
+  currentLevel: string,
+  nextLevel:    string,
+  suggestions:  ImprovementSuggestion[],
+): Promise<void> {
+  try {
+    const suggestionCards = suggestions
+      .map(s => `
+        <tr>
+          <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;">
+            <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#0A2540;">${s.title}</p>
+            <p style="margin:0 0 6px;font-size:13px;color:#374151;line-height:1.6;">${s.detail}</p>
+            <span style="display:inline-block;background:#E6F1FB;color:#185FA5;font-size:11px;
+                         font-weight:600;padding:2px 10px;border-radius:99px;margin-right:6px;">
+              ${s.dimension}
+            </span>
+            <span style="display:inline-block;background:#E1F5EE;color:#0F6E56;font-size:11px;
+                         font-weight:600;padding:2px 10px;border-radius:99px;">
+              +${s.points_gain} pts
+            </span>
+          </td>
+        </tr>`)
+      .join('')
+
+    await resend.emails.send({
+      from:    FROM,
+      to,
+      subject: `5 steps to go from ${currentLevel} to ${nextLevel} on LinkedIn`,
+      html: layout(`
+        <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">It's been 30 days since your audit</p>
+        <h1 style="${H1}">Time to move from ${currentLevel} to ${nextLevel}</h1>
+
+        <!-- Score progression -->
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+               style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;margin:0 0 24px;overflow:hidden;">
+          <tr>
+            <td style="padding:16px 20px;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td style="text-align:center;">
+                    <p style="margin:0;font-size:32px;font-weight:800;color:#888780;">${currentScore}</p>
+                    <p style="margin:2px 0 0;font-size:12px;color:#9ca3af;">Current</p>
+                  </td>
+                  <td style="text-align:center;font-size:20px;color:#1D9E75;font-weight:700;">→</td>
+                  <td style="text-align:center;">
+                    <p style="margin:0;font-size:32px;font-weight:800;color:#1D9E75;">${targetScore}</p>
+                    <p style="margin:2px 0 0;font-size:12px;color:#9ca3af;">Target</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- 5-point plan -->
+        <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#0A2540;">
+          Your personalised 5-point improvement plan:
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+               style="margin:0 0 24px;">
+          ${suggestionCards}
+        </table>
+
+        <!-- Re-audit CTA -->
+        <p style="margin:0 0 24px;">
+          <a href="https://postpika.com/audit" style="${BTN}">
+            Re-audit my profile →
+          </a>
+        </p>
+
+        <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
+          <a href="https://postpika.com/unsubscribe" style="color:#9ca3af;text-decoration:none;">Unsubscribe anytime</a>
+        </p>
+      `),
+    })
+  } catch (err) {
+    console.error('[sendImprovementEmail]', err instanceof Error ? err.message : err)
+  }
+}
+
 // ── 4. Payment failed email ───────────────────────────────────────────────────
 
 export async function sendPaymentFailedEmail(to: string, name: string): Promise<void> {

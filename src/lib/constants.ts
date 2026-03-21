@@ -131,13 +131,14 @@ export const LANGUAGES = [
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 export const NAV_ITEMS = [
-  { href: '/dashboard',  label: 'Dashboard',  icon: 'LayoutDashboard', proOnly: false },
-  { href: '/generate',   label: 'Generate',   icon: 'Sparkles',        proOnly: false },
-  { href: '/hooks',      label: 'Hook Writer', icon: 'Anchor',         proOnly: false },
-  { href: '/posts',      label: 'My Posts',   icon: 'FileText',        proOnly: false },
-  { href: '/calendar',   label: 'Calendar',   icon: 'Calendar',        proOnly: false },
-  { href: '/ideas',      label: 'Idea Lab',   icon: 'Lightbulb',       proOnly: false },
-  { href: '/analytics',  label: 'Analytics',  icon: 'BarChart2',       proOnly: true  },
+  { href: '/dashboard',        label: 'Dashboard',    icon: 'LayoutDashboard', proOnly: false },
+  { href: '/generate',         label: 'Generate',     icon: 'Sparkles',        proOnly: false },
+  { href: '/hooks',            label: 'Hook Writer',  icon: 'Anchor',          proOnly: false },
+  { href: '/posts',            label: 'My Posts',     icon: 'FileText',        proOnly: false },
+  { href: '/calendar',         label: 'Calendar',     icon: 'Calendar',        proOnly: false },
+  { href: '/ideas',            label: 'Idea Lab',     icon: 'Lightbulb',       proOnly: false },
+  { href: '/dashboard/audit',  label: 'Brand Audit',  icon: 'Target',          proOnly: false },
+  { href: '/analytics',        label: 'Analytics',    icon: 'BarChart2',       proOnly: true  },
 ] as const
 
 /** Niche metadata for onboarding cards */

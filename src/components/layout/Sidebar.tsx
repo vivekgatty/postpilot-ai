@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Anchor,
+  Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/constants'
@@ -30,6 +31,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Lightbulb,
   BarChart2,
   Anchor,
+  Target,
 }
 
 // ── Plan badge ────────────────────────────────────────────────────────────────
@@ -112,6 +114,12 @@ export default function Sidebar({ profile }: SidebarProps) {
               {item.href === '/hooks' && !isActive && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#1D9E75]/10 text-[#1D9E75]">
                   NEW
+                </span>
+              )}
+
+              {item.href === '/dashboard/audit' && !isActive && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#1D9E75]/10 text-[#1D9E75]">
+                  FREE
                 </span>
               )}
 
