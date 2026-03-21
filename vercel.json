@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/cron/linkedin-publisher",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/audit-reminders",
