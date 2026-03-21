@@ -34,11 +34,9 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 function HookCard({
-  hook, idea, niche, onCopy, onSave, saving,
+  hook, onCopy, onSave, saving,
 }: {
   hook: HookResult
-  idea: string
-  niche: string
   onCopy: (text: string) => void
   onSave: (hook: HookResult) => void
   saving: boolean
@@ -176,9 +174,9 @@ function SavedHookCard({ hook, onDelete }: { hook: SavedHook; onDelete: (id: str
 // ── Style toggle pill ─────────────────────────────────────────────────────────
 
 function StylePill({
-  id, label, category, isPremium, isLocked, selected, onToggle,
+  label, category, isPremium, isLocked, selected, onToggle,
 }: {
-  id: string; label: string; category: string; isPremium: boolean
+  label: string; category: string; isPremium: boolean
   isLocked: boolean; selected: boolean; onToggle: () => void
 }) {
   const CATEGORY_BORDER: Record<string, string> = {
@@ -406,7 +404,6 @@ export default function HooksPage() {
                   {HOOK_STYLES.filter(s => s.category === cat).map(s => (
                     <StylePill
                       key={s.id}
-                      id={s.id}
                       label={s.label}
                       category={s.category}
                       isPremium={s.isPremium}
@@ -496,8 +493,6 @@ export default function HooksPage() {
                     <HookCard
                       key={hook.id}
                       hook={hook}
-                      idea={idea}
-                      niche={niche}
                       onCopy={handleCopy}
                       onSave={handleSave}
                       saving={savingId === hook.id}
