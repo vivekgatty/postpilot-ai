@@ -102,6 +102,11 @@ export default function PlannerPage() {
       const profileData = await profileRes.json() as { profile: { niche: string; linkedin_connection?: LinkedInConnection } }
       setUserNiche(profileData.profile?.niche ?? 'Other')
 
+      // Fire-and-forget: process any due scheduled posts for this user.
+      // Replaces the Vercel cron (not available on Hobby plan) — running on
+      // every planner page open is sufficient for scheduled posting.
+      fetch('/api/planner/process-queue', { method: 'POST' }).catch(() => {})
+
       // Check LinkedIn connection via separate call
       const liRes  = await fetch('/api/linkedin/status').catch(() => null)
       if (liRes?.ok) {
