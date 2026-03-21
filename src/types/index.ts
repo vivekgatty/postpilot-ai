@@ -179,3 +179,68 @@ export interface PricingPlan {
   features: string[]
   highlighted?: boolean
 }
+
+// ─── Tone / Format Config ──────────────────────────────────────────────────────
+
+export interface ToneConfig {
+  id: string
+  label: string
+  icon: string
+  description: string
+  colorClass: string
+  systemPrompt: string
+  isCustom?: boolean
+  customId?: string
+}
+
+export interface FormatConfig {
+  id: string
+  label: string
+  icon: string
+  description: string
+  example: string
+  formatPrompt: string
+  isCustom?: boolean
+  customId?: string
+}
+
+// ─── Custom Tones / Formats (DB rows) ─────────────────────────────────────────
+
+export interface CustomTone {
+  id: string
+  user_id: string
+  name: string
+  system_prompt: string
+  config_json: {
+    base_personality: string
+    audience: string[]
+    formality: number
+    emotion: number
+    length: number
+    perspective: number
+  }
+  is_active: boolean
+  created_at: string
+}
+
+export interface CustomFormat {
+  id: string
+  user_id: string
+  name: string
+  structure_type: string
+  format_prompt: string
+  config_json: {
+    skeleton: string
+    sections: { label: string; instruction: string }[]
+  }
+  is_active: boolean
+  created_at: string
+}
+
+export interface UserContentPreferences {
+  user_id: string
+  favourite_tones: string[]
+  favourite_formats: string[]
+  default_tone: string
+  default_format: string
+}
