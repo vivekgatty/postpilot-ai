@@ -32,7 +32,7 @@ export default function PlannerMonthStats({ posts, pillars, settings }: Props) {
     // Streak — count consecutive days with published posts backwards from today
     const now     = new Date()
     let streak    = 0
-    let checkDate = new Date(now)
+    const checkDate = new Date(now)
     const publishedDates = new Set(
       posts.filter((p) => p.status === 'published').map((p) => p.planned_date.slice(0, 10)),
     )

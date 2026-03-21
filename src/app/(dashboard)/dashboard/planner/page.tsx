@@ -37,7 +37,7 @@ export default function PlannerPage() {
   const [settings, setSettings]             = useState<PlannerSettings | null>(null)
   const [selectedPost, setSelectedPost]     = useState<PlannedPost | null>(null)
   const [bankItems, setBankItems]           = useState<ContentBankItem[]>([])
-  const [suggestions, setSuggestions]       = useState<{ title: string; topic: string }[]>([])
+  const [suggestions]                       = useState<{ title: string; topic: string }[]>([])
   const [connection, setConnection]         = useState<LinkedInConnection | null>(null)
   const [linkedInConnected, setLinkedInConnected] = useState(false)
   const [showSetupWizard, setShowSetupWizard]     = useState(false)

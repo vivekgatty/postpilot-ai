@@ -9,7 +9,7 @@ import { randomBytes } from 'crypto'
 // ── GET /api/linkedin/connect ─────────────────────────────────────────────────
 // Redirects user to LinkedIn OAuth for w_member_social scope.
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

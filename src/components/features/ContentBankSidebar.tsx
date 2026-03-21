@@ -55,7 +55,7 @@ export default function ContentBankSidebar({
   })
 
   // DnD: content bank items are draggable to the calendar
-  const handleDragEnd = (_result: DropResult) => {
+  const handleDragEnd: (result: DropResult) => void = () => {
     // Calendar handles the drop via window.__dragBankItem
   }
 

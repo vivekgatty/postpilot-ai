@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd'
 import { cn } from '@/lib/utils'
 import { FORMAT_ICONS } from '@/lib/plannerConfig'
 import type { PlannedPost, ContentPillar, ContentBankItem } from '@/types'
