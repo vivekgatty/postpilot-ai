@@ -244,3 +244,42 @@ export interface UserContentPreferences {
   default_tone: string
   default_format: string
 }
+
+// ─── Hook Generator ────────────────────────────────────────────────────────────
+
+export interface HookStyle {
+  id: string
+  label: string
+  category: string
+  description: string
+  template: string
+  example: string
+  isPremium: boolean
+}
+
+export interface HookResult {
+  id: string
+  styleId: string
+  styleLabel: string
+  category: string
+  content: string
+  characterCount: number
+}
+
+export interface GenerateHooksRequest {
+  idea: string
+  niche: string
+  goal: 'comments' | 'credibility' | 'followers' | 'leads' | 'story' | 'debate'
+  selectedStyles: string[]
+}
+
+export interface SavedHook {
+  id: string
+  user_id: string
+  content: string
+  style_id: string
+  style_label: string
+  idea_input: string
+  niche: string
+  created_at: string
+}

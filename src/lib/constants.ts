@@ -1,4 +1,4 @@
-import type { NicheType, PlanType, PricingPlan, ToneType, ToneConfig, FormatConfig } from '@/types'
+import type { NicheType, PlanType, PricingPlan, ToneType, ToneConfig, FormatConfig, HookStyle } from '@/types'
 
 // ─── Brand ────────────────────────────────────────────────────────────────────
 
@@ -128,12 +128,13 @@ export const LANGUAGES = [
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 export const NAV_ITEMS = [
-  { href: '/dashboard',  label: 'Dashboard', icon: 'LayoutDashboard', proOnly: false },
-  { href: '/generate',   label: 'Generate',  icon: 'Sparkles',        proOnly: false },
-  { href: '/posts',      label: 'My Posts',  icon: 'FileText',        proOnly: false },
-  { href: '/calendar',   label: 'Calendar',  icon: 'Calendar',        proOnly: false },
-  { href: '/ideas',      label: 'Idea Lab',  icon: 'Lightbulb',       proOnly: false },
-  { href: '/analytics',  label: 'Analytics', icon: 'BarChart2',       proOnly: true  },
+  { href: '/dashboard',  label: 'Dashboard',  icon: 'LayoutDashboard', proOnly: false },
+  { href: '/generate',   label: 'Generate',   icon: 'Sparkles',        proOnly: false },
+  { href: '/hooks',      label: 'Hook Writer', icon: 'Anchor',         proOnly: false },
+  { href: '/posts',      label: 'My Posts',   icon: 'FileText',        proOnly: false },
+  { href: '/calendar',   label: 'Calendar',   icon: 'Calendar',        proOnly: false },
+  { href: '/ideas',      label: 'Idea Lab',   icon: 'Lightbulb',       proOnly: false },
+  { href: '/analytics',  label: 'Analytics',  icon: 'BarChart2',       proOnly: true  },
 ] as const
 
 /** Niche metadata for onboarding cards */
@@ -257,3 +258,42 @@ export const SKELETON_SECTION_DEFAULTS: Record<string, { label: string; instruct
     { label: 'Structure', instruction: 'Describe exactly how you want your post structured. Be as specific as possible about the order, length, and content of each section.' },
   ],
 }
+
+// ─── Hook Styles ──────────────────────────────────────────────────────────────
+
+export const HOOK_STYLES: HookStyle[] = [
+  // Curiosity
+  { id: 'curiosity-gap',    label: 'Curiosity Gap',      category: 'Curiosity', description: 'Opens a gap the reader must close', template: 'The one thing about [X] that nobody tells you...', example: 'The one thing about cold outreach that nobody tells you in India...', isPremium: false },
+  { id: 'contrarian',       label: 'Contrarian Take',    category: 'Curiosity', description: 'Challenges a commonly held belief', template: '[Popular belief] is wrong. Here is why.', example: 'Posting every day on LinkedIn is wrong. Here is why.', isPremium: false },
+  { id: 'myth-bust',        label: 'Myth Buster',        category: 'Curiosity', description: 'Debunks a common myth in your niche', template: 'Myth: [X]. Reality: [Y].', example: 'Myth: You need 10k followers to get leads. Reality: 200 engaged followers beat 10k passive ones.', isPremium: false },
+
+  // Value
+  { id: 'number-hook',      label: 'Number Hook',        category: 'Value',     description: 'Leads with a specific number or stat', template: '[Number] [result/insight] I learned in [time period]', example: '7 things I learned growing from 0 to ₹1 crore ARR in 18 months', isPremium: false },
+  { id: 'how-to',           label: 'How-To',             category: 'Value',     description: 'Promises a clear outcome or skill', template: 'How to [achieve result] without [common obstacle]', example: 'How to get your first 5 SaaS customers without running a single ad', isPremium: false },
+  { id: 'resource',         label: 'Resource Drop',      category: 'Value',     description: 'Promises a curated list or toolkit', template: '[Number] [tools/books/resources] that changed how I [do X]', example: '5 free tools that cut my content creation time in half', isPremium: false },
+
+  // Story
+  { id: 'failure-story',    label: 'Failure Story',      category: 'Story',     description: 'Opens with a candid failure', template: 'I failed at [X]. Here is exactly what went wrong and what I learned.', example: 'I failed to close a ₹50L deal last quarter. Here is exactly what went wrong.', isPremium: false },
+  { id: 'before-after',     label: 'Before & After',     category: 'Story',     description: 'Shows a dramatic transformation', template: '[Time ago]: [bad state]. Today: [good state]. Here is what changed.', example: '12 months ago I had zero LinkedIn followers. Today I get 20 inbound leads a week. Here is what changed.', isPremium: false },
+  { id: 'moment-hook',      label: 'The Moment',         category: 'Story',     description: 'Drops the reader into a single vivid moment', template: 'The day [specific event happened] changed everything for me.', example: 'The day my co-founder quit two months before our Series A changed everything for me.', isPremium: false },
+
+  // Engagement
+  { id: 'bold-claim',       label: 'Bold Claim',         category: 'Engagement', description: 'Opens with a confident, defensible statement', template: '[Bold declarative statement about your niche]', example: 'LinkedIn reach is dead — unless you do this one thing differently.', isPremium: false },
+  { id: 'direct-question',  label: 'Direct Question',    category: 'Engagement', description: 'Poses a question the reader wants answered', template: '[Specific question your ideal reader is asking themselves]', example: 'Are you wasting your best content ideas by posting them at the wrong time?', isPremium: false },
+  { id: 'social-proof',     label: 'Social Proof Hook',  category: 'Engagement', description: 'Opens with a result that proves credibility', template: 'We [achieved X result] in [timeframe]. Here is the exact playbook.', example: 'We closed ₹40L in new business in 90 days with zero paid ads. Here is the exact playbook.', isPremium: true  },
+
+  // Urgency
+  { id: 'trend-hook',       label: 'Trend Hook',         category: 'Urgency',   description: 'Ties into something happening right now', template: 'What [current trend/event] means for [your niche] — and what to do next', example: 'What the AI coding wave means for Indian software engineers — and what to do next', isPremium: true  },
+  { id: 'warning',          label: 'Warning Hook',       category: 'Urgency',   description: 'Warns about a mistake or coming change', template: 'If you are still doing [X], stop. Here is why this is hurting you.', example: 'If you are still sending cold connection requests with no message, stop. Here is why this is killing your pipeline.', isPremium: true  },
+]
+
+export const HOOK_CATEGORIES = ['Curiosity', 'Value', 'Story', 'Engagement', 'Urgency'] as const
+
+export const HOOK_GOALS = [
+  { id: 'comments',     label: 'Drive Comments',       description: 'Maximise discussion and replies' },
+  { id: 'credibility',  label: 'Build Credibility',    description: 'Establish authority and trust' },
+  { id: 'followers',    label: 'Grow Followers',       description: 'Attract the right audience' },
+  { id: 'leads',        label: 'Generate Leads',       description: 'Bring in potential clients' },
+  { id: 'story',        label: 'Tell a Story',         description: 'Build emotional connection' },
+  { id: 'debate',       label: 'Spark Debate',         description: 'Get people taking sides' },
+] as const

@@ -11,6 +11,7 @@ import {
   BarChart2,
   Settings,
   LogOut,
+  Anchor,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/constants'
@@ -28,6 +29,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar,
   Lightbulb,
   BarChart2,
+  Anchor,
 }
 
 // ── Plan badge ────────────────────────────────────────────────────────────────
