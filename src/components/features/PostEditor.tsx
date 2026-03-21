@@ -109,7 +109,7 @@ export default function PostEditor({ post, onSave, onCancel, saving = false }: P
       {/* Compact tone picker */}
       <div>
         <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Tone</p>
-        <ToneSelector value={tone} onChange={setTone} disabled={saving} compact />
+        <ToneSelector value={tone} onChange={(id) => setTone(id as import('@/types').ToneType)} disabled={saving} compact />
       </div>
 
       {/* Status + datetime row */}
