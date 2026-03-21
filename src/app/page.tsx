@@ -356,6 +356,11 @@ export default function LandingPage() {
                 desc: 'No USD confusion, no conversion fees. Pay in rupees via UPI, cards or net banking.',
               },
               {
+                icon: '⚓',
+                title: 'Hook Generator',
+                desc: '113 hook styles — from curiosity gaps to authority openers — so your first line always stops the scroll.',
+              },
+              {
                 icon: '🧾',
                 title: 'GST auto-invoices',
                 desc: 'Every payment auto-generates a GST-compliant invoice — sent to your inbox immediately.',
@@ -372,6 +377,67 @@ export default function LandingPage() {
                 <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOOK GENERATOR SPOTLIGHT ─────────────────────────────────────── */}
+      <section className="py-20 px-5">
+        <div className="max-w-5xl mx-auto">
+          <div className="rounded-3xl bg-gradient-to-br from-[#0A2540] to-[#0F6E56] p-10 lg:p-16 flex flex-col lg:flex-row items-center gap-10">
+
+            {/* Text */}
+            <div className="flex-1 text-center lg:text-left">
+              <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-[#5FD3B0] mb-4">
+                New — Hook Generator
+              </span>
+              <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight">
+                113 ways to start a post.<br />
+                Zero writer&apos;s block.
+              </h2>
+              <p className="text-[#A8D5C8] text-base leading-relaxed mb-8 max-w-md mx-auto lg:mx-0">
+                The first line of your post determines everything — whether someone keeps scrolling or stops to read.
+                Pick a style, describe your idea, and get a scroll-stopping hook in seconds.
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+                <a
+                  href="/login"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1D9E75] hover:bg-[#178a64] text-white font-bold text-sm transition-colors shadow-lg"
+                >
+                  Try Hook Generator free →
+                </a>
+              </div>
+            </div>
+
+            {/* Style preview pills */}
+            <div className="flex-shrink-0 w-full lg:w-auto">
+              <div className="flex flex-wrap gap-2 justify-center lg:justify-end max-w-xs mx-auto lg:mx-0">
+                {[
+                  { label: 'Curiosity Gap',    cat: 'Curiosity'  },
+                  { label: 'Number Hook',      cat: 'Value'      },
+                  { label: 'Failure Story',    cat: 'Story'      },
+                  { label: 'Bold Claim',       cat: 'Engagement' },
+                  { label: 'Warning Hook',     cat: 'Urgency'    },
+                  { label: 'Contrarian Take',  cat: 'Curiosity'  },
+                  { label: 'How-To Hook',      cat: 'Value'      },
+                  { label: 'Before & After',   cat: 'Story'      },
+                  { label: 'Direct Question',  cat: 'Engagement' },
+                  { label: 'Trend Hook',       cat: 'Urgency'    },
+                  { label: 'Case Study',       cat: 'Authority'  },
+                  { label: 'Myth Buster',      cat: 'Curiosity'  },
+                ].map(s => (
+                  <span
+                    key={s.label}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/10 text-white border border-white/20"
+                  >
+                    {s.label}
+                  </span>
+                ))}
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/10 text-[#5FD3B0] border border-white/20">
+                  +101 more →
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

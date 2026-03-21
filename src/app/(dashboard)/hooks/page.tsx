@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Anchor, Loader2, Copy, Check, ChevronDown, RefreshCw, Lock } from 'lucide-react'
+import { Anchor, Loader2, Copy, Check, ChevronDown, RefreshCw, Lock, Bookmark, ExternalLink, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HOOK_STYLES, HOOK_CATEGORIES, HOOK_GOALS, NICHE_OPTIONS } from '@/lib/constants'
-import type { HookResult, NicheType, Profile } from '@/types'
+import type { HookResult, SavedHook, NicheType, Profile } from '@/types'
 import { useToast } from '@/components/ui/Toast'
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -24,8 +24,27 @@ function HookSkeleton() {
 
 // ── Hook result card ──────────────────────────────────────────────────────────
 
-function HookCard({ hook, onCopy }: { hook: HookResult; onCopy: (text: string) => void }) {
+const CATEGORY_COLORS: Record<string, string> = {
+  Curiosity:  'bg-purple-50 text-purple-700',
+  Value:      'bg-blue-50 text-blue-700',
+  Story:      'bg-amber-50 text-amber-700',
+  Engagement: 'bg-[#E1F5EE] text-[#0F6E56]',
+  Urgency:    'bg-red-50 text-red-700',
+  Authority:  'bg-indigo-50 text-indigo-700',
+}
+
+function HookCard({
+  hook, idea, niche, onCopy, onSave, saving,
+}: {
+  hook: HookResult
+  idea: string
+  niche: string
+  onCopy: (text: string) => void
+  onSave: (hook: HookResult) => void
+  saving: boolean
+}) {
   const [copied, setCopied] = useState(false)
+  const colorClass = CATEGORY_COLORS[hook.category] ?? 'bg-gray-100 text-gray-600'
 
   const handleCopy = async () => {
     try {
@@ -38,15 +57,7 @@ function HookCard({ hook, onCopy }: { hook: HookResult; onCopy: (text: string) =
     }
   }
 
-  const CATEGORY_COLORS: Record<string, string> = {
-    Curiosity:  'bg-purple-50 text-purple-700',
-    Value:      'bg-blue-50 text-blue-700',
-    Story:      'bg-amber-50 text-amber-700',
-    Engagement: 'bg-[#E1F5EE] text-[#0F6E56]',
-    Urgency:    'bg-red-50 text-red-700',
-  }
-
-  const colorClass = CATEGORY_COLORS[hook.category] ?? 'bg-gray-100 text-gray-600'
+  const writePostUrl = `/generate?hook=${encodeURIComponent(hook.content)}`
 
   return (
     <div className="group bg-white rounded-xl border border-[#E5E4E0] p-4 hover:border-[#1D9E75]/40 transition-colors">
@@ -60,7 +71,7 @@ function HookCard({ hook, onCopy }: { hook: HookResult; onCopy: (text: string) =
 
       <p className="text-sm text-[#0A2540] font-medium leading-snug mb-3">{hook.content}</p>
 
-      <div className="flex justify-end">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={handleCopy}
@@ -73,6 +84,89 @@ function HookCard({ hook, onCopy }: { hook: HookResult; onCopy: (text: string) =
         >
           {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           {copied ? 'Copied!' : 'Copy'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onSave(hook)}
+          disabled={saving}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#E5E4E0] text-gray-600 hover:border-[#1D9E75]/50 hover:text-[#0A2540] bg-white transition-all duration-150 disabled:opacity-50"
+        >
+          <Bookmark className="w-3.5 h-3.5" />
+          Save
+        </button>
+
+        <a
+          href={writePostUrl}
+          className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-[#1D9E75] hover:underline"
+        >
+          Write full post <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+    </div>
+  )
+}
+
+// ── Saved hook card ────────────────────────────────────────────────────────────
+
+function SavedHookCard({ hook, onDelete }: { hook: SavedHook; onDelete: (id: string) => void }) {
+  const [copied, setCopied]   = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const colorClass = CATEGORY_COLORS['Value'] ?? 'bg-gray-100 text-gray-600'
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(hook.content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await fetch(`/api/hooks/saved/${hook.id}`, { method: 'DELETE' })
+      onDelete(hook.id)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E5E4E0] p-4 hover:border-gray-300 transition-colors">
+      <div className="flex items-center gap-2 mb-2">
+        <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide', colorClass)}>
+          {hook.style_label}
+        </span>
+        <span className="text-[10px] text-gray-300 ml-auto">{hook.niche}</span>
+      </div>
+      <p className="text-sm text-[#0A2540] font-medium leading-snug mb-3">{hook.content}</p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150',
+            copied ? 'bg-[#1D9E75] text-white' : 'border border-[#E5E4E0] text-gray-600 hover:border-[#1D9E75]/50 bg-white',
+          )}
+        >
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+        <a
+          href={`/generate?hook=${encodeURIComponent(hook.content)}`}
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-[#1D9E75] hover:underline"
+        >
+          Write post <ExternalLink className="w-3 h-3" />
+        </a>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="ml-auto text-gray-300 hover:text-red-400 transition-colors disabled:opacity-50"
+          aria-label="Delete saved hook"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
@@ -128,16 +222,25 @@ export default function HooksPage() {
   const [hooks,          setHooks]          = useState<HookResult[]>([])
   const [generating,     setGenerating]     = useState(false)
   const [isPaid,         setIsPaid]         = useState(false)
+  const [savedHooks,     setSavedHooks]     = useState<SavedHook[]>([])
+  const [savingId,       setSavingId]       = useState<string | null>(null)
 
   const { toast } = useToast()
 
-  // Pre-fill niche + plan from profile
+  // Pre-fill niche + plan from profile; load saved hooks
   useEffect(() => {
     fetch('/api/user/profile')
       .then(r => r.json())
       .then((d: { profile?: Profile }) => {
         if (d.profile?.niche) setNiche(d.profile.niche)
         if (d.profile?.plan && d.profile.plan !== 'free') setIsPaid(true)
+      })
+      .catch(() => {})
+
+    fetch('/api/hooks/saved')
+      .then(r => r.json())
+      .then((d: { savedHooks?: SavedHook[] }) => {
+        if (d.savedHooks) setSavedHooks(d.savedHooks)
       })
       .catch(() => {})
   }, [])
@@ -184,6 +287,36 @@ export default function HooksPage() {
   }
 
   const handleCopy = useCallback(() => toast.info('Copied to clipboard'), [toast])
+
+  const handleSave = useCallback(async (hook: HookResult) => {
+    setSavingId(hook.id)
+    try {
+      const res = await fetch('/api/hooks/saved', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content:     hook.content,
+          style_id:    hook.styleId,
+          style_label: hook.styleLabel,
+          idea_input:  idea,
+          niche,
+        }),
+      })
+      const data = await res.json() as { savedHook?: SavedHook; error?: string }
+      if (!res.ok) throw new Error(data.error ?? 'Failed to save')
+      if (data.savedHook) setSavedHooks(prev => [data.savedHook!, ...prev])
+      toast.success('Hook saved to library')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save hook')
+    } finally {
+      setSavingId(null)
+    }
+  }, [idea, niche, toast])
+
+  const handleDeleteSaved = useCallback((id: string) => {
+    setSavedHooks(prev => prev.filter(h => h.id !== id))
+    toast.info('Hook removed')
+  }, [toast])
 
   const showEmpty   = !generating && hooks.length === 0
   const showLoading = generating
@@ -360,7 +493,15 @@ export default function HooksPage() {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">{cat}</p>
                 <div className="space-y-2">
                   {hooks.filter(h => h.category === cat).map(hook => (
-                    <HookCard key={hook.id} hook={hook} onCopy={handleCopy} />
+                    <HookCard
+                      key={hook.id}
+                      hook={hook}
+                      idea={idea}
+                      niche={niche}
+                      onCopy={handleCopy}
+                      onSave={handleSave}
+                      saving={savingId === hook.id}
+                    />
                   ))}
                 </div>
               </div>
@@ -369,11 +510,25 @@ export default function HooksPage() {
             {/* Tip */}
             <div className="rounded-xl bg-gray-50 border border-[#E5E4E0] px-4 py-3">
               <p className="text-xs text-gray-500">
-                <span className="font-semibold text-[#0A2540]">Tip:</span> Copy your favourite hook, then use the{' '}
-                <a href="/generate" className="text-[#1D9E75] font-medium hover:underline">Generate page</a>{' '}
-                to write the full post around it.
+                <span className="font-semibold text-[#0A2540]">Tip:</span> Copy your favourite hook, then click{' '}
+                <span className="font-medium text-[#0A2540]">&quot;Write full post&quot;</span> to build the complete post around it.
               </p>
             </div>
+          </div>
+        )}
+
+        {/* ─── SAVED HOOKS ──────────────────────────────────────────── */}
+        {savedHooks.length > 0 && (
+          <div className="mt-8 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-[#0A2540]">
+                Saved hooks
+                <span className="ml-1.5 text-xs font-normal text-gray-400">({savedHooks.length})</span>
+              </p>
+            </div>
+            {savedHooks.map(h => (
+              <SavedHookCard key={h.id} hook={h} onDelete={handleDeleteSaved} />
+            ))}
           </div>
         )}
       </div>
