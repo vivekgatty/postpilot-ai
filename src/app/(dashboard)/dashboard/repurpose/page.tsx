@@ -4,12 +4,21 @@ import { useState, useEffect, useCallback } from 'react'
 import { useUser }  from '@/hooks/useUser'
 import { useToast } from '@/components/ui/Toast'
 import { cn }       from '@/lib/utils'
-import { Link2, FileText, AlertTriangle, RotateCw, Check, ChevronDown, ChevronUp, Lock } from 'lucide-react'
+import { Link2, FileText, AlertTriangle, RotateCw, Check, ChevronDown, ChevronUp, Lock, Trash2, Bookmark, Eye, EyeOff } from 'lucide-react'
 import {
   detectPlatform, isLinkedInUrl, SOURCE_PLATFORMS, REPURPOSE_LIMITS, GENERIC_ANGLES_FREE,
 } from '@/lib/repurposeConfig'
 import { SYSTEM_TONES } from '@/lib/constants'
+import RepurposePostCard from '@/components/features/RepurposePostCard'
 import type { RepurposeAngle, RepurposedPost, RepurposeSession, RepurposeSettings } from '@/types'
+
+function timeAgo(iso: string): string {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  return `${Math.floor(s / 86400)}d ago`
+}
 
 interface ExtractedData {
   title: string; author: string; platform: string; word_count: number; text_preview: string
@@ -58,8 +67,10 @@ export default function RepurposePage() {
   const [savingPostIds,  setSavingPostIds]  = useState<Set<string>>(new Set())
 
   // ── History ────────────────────────────────────────────────────────────────
-  const [sessions,        setSessions]        = useState<RepurposeSession[]>([])
-  const [sessionsLoading, setSessionsLoading] = useState(false)
+  const [sessions,          setSessions]          = useState<RepurposeSession[]>([])
+  const [sessionsLoading,   setSessionsLoading]   = useState(false)
+  const [expandedSessions,  setExpandedSessions]  = useState<Set<string>>(new Set())
+  const [sessionPosts,      setSessionPosts]      = useState<Record<string, string[]>>({})
   const [genMsgIdx,       setGenMsgIdx]       = useState(0)
   const [showFullText,    setShowFullText]     = useState(false)
 
@@ -212,6 +223,54 @@ export default function RepurposePage() {
       toast.success('Post regenerated!')
     } else { toast.error('Regeneration failed.') }
   }, [angles, sessionId, toneId, includeCarousel, includePoll, addHashtags, addAttribution, profile, toast])
+
+  // ── Session history ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (activeTab !== 'history') return
+    setSessionsLoading(true)
+    fetch('/api/repurpose/sessions')
+      .then(r => r.ok ? r.json() : { sessions: [] })
+      .then(d => setSessions(d.sessions ?? []))
+      .catch(() => {})
+      .finally(() => setSessionsLoading(false))
+  }, [activeTab])
+
+  const handleDeleteSession = useCallback(async (id: string) => {
+    const res = await fetch(`/api/repurpose/sessions/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      setSessions(prev => prev.filter(s => s.id !== id))
+      toast.success('Session deleted.')
+    } else { toast.error('Failed to delete session.') }
+  }, [toast])
+
+  const handleViewPosts = useCallback(async (session: RepurposeSession) => {
+    const isOpen = expandedSessions.has(session.id)
+    if (isOpen) {
+      setExpandedSessions(prev => { const n = new Set(Array.from(prev)); n.delete(session.id); return n })
+      return
+    }
+    if (!sessionPosts[session.id]) {
+      const res = await fetch(`/api/repurpose/sessions/${session.id}`)
+      if (res.ok) {
+        const d = await res.json()
+        setSessionPosts(prev => ({ ...prev, [session.id]: (d.posts ?? []).map((p: { content: string }) => p.content) }))
+      }
+    }
+    setExpandedSessions(prev => new Set(Array.from(prev).concat(session.id)))
+  }, [expandedSessions, sessionPosts])
+
+  const handleReuseSession = useCallback((s: RepurposeSession) => {
+    setSessionId(s.id)
+    setExtractedData({
+      title: s.source_title ?? '', author: s.source_author ?? '',
+      platform: s.source_platform ?? 'website',
+      word_count: s.word_count, text_preview: (s.extracted_text ?? '').slice(0, 500),
+    })
+    setEditableText(s.extracted_text ?? '')
+    setActiveTab('repurpose')
+    setCurrentStep(2)
+    handleAnglesLoad()
+  }, [handleAnglesLoad])
 
   const isLinkedIn     = isLinkedInUrl(urlInput)
   const platformConfig = SOURCE_PLATFORMS[detectedPlatform]
@@ -371,6 +430,136 @@ export default function RepurposePage() {
     </div>
   )
 
+  // ── Step 3: Results ────────────────────────────────────────────────────────
+  const ResultsStep = (
+    <div className="space-y-5">
+      <button type="button" onClick={() => setCurrentStep(2)} className="text-xs text-gray-400 hover:text-gray-600">← Back</button>
+      {/* Top action bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-gray-600">
+          <span className="font-bold text-[#0A2540]">{generatedPosts.length} posts</span>
+          {' '}from{' '}
+          <span className="font-semibold">{(extractedData?.title ?? 'your source').slice(0, 40)}</span>
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button type="button" onClick={handleSaveAll}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1D9E75] hover:bg-[#178a64] text-white text-xs font-bold transition-colors">
+            <Bookmark className="w-3.5 h-3.5" />Save all drafts
+          </button>
+          <button type="button" onClick={async () => {
+            await Promise.all(generatedPosts.map(p =>
+              fetch('/api/planner/content-bank', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: p.angle_title, topic: p.content.slice(0, 200), source: 'manual' }),
+              })
+            ))
+            toast.success('Added to Content Bank!')
+          }} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E4E0] text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+            Add to Content Bank
+          </button>
+          <button type="button" onClick={() => toast.info('Go to Content Planner to schedule these posts')}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E4E0] text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+            Add to calendar
+          </button>
+        </div>
+      </div>
+      {/* Posts grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {generatedPosts.map((post, idx) => (
+          <RepurposePostCard key={idx} post={post}
+            onSave={p => handleSavePost(p)}
+            onCopy={p => handleCopy(p.content)}
+            onRegenerate={p => handleRegenerate(p)}
+            onAddToCalendar={() => toast.info('Go to Content Planner to schedule')}
+            isSaving={savingPostIds.has(post.angle_id)}
+            isPaid={plan !== 'free'}
+          />
+        ))}
+      </div>
+      <div className="flex justify-center pt-2">
+        <button type="button" onClick={() => {
+          setCurrentStep(0); setGeneratedPosts([]); setExtractedData(null)
+          setEditableText(''); setSessionId(null); setUrlInput(''); setTextInput('')
+        }} className="text-xs text-gray-400 hover:text-gray-600 underline">
+          Start over
+        </button>
+      </div>
+    </div>
+  )
+
+  // ── History tab ────────────────────────────────────────────────────────────
+  const isFree = plan === 'free'
+  const visibleSessions = isFree ? sessions.slice(0, 1) : sessions
+
+  const HistoryTab = (
+    <div className="space-y-4">
+      <h2 className="text-lg font-bold text-[#0A2540]">Repurpose history</h2>
+      {isFree && sessions.length > 0 && (
+        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-700">
+          Showing your most recent session.{' '}
+          <a href="/settings" className="font-semibold underline">Upgrade</a>
+          {' '}to see full history and re-use past sessions.
+        </div>
+      )}
+      {sessionsLoading ? (
+        <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="shimmer h-20 rounded-2xl" />)}</div>
+      ) : sessions.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-[#E1F5EE] flex items-center justify-center text-3xl">♻️</div>
+          <div>
+            <p className="font-bold text-[#0A2540]">No sessions yet</p>
+            <p className="text-sm text-gray-400 mt-0.5">Repurpose your first piece of content to see it here</p>
+          </div>
+          <button type="button" onClick={() => setActiveTab('repurpose')}
+            className="px-4 py-2 rounded-xl bg-[#1D9E75] text-white text-sm font-bold hover:bg-[#178a64]">
+            Repurpose content →
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {visibleSessions.map(session => (
+            <div key={session.id} className="bg-white rounded-2xl border border-[#E5E4E0] p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#0A2540] truncate">{session.source_title || 'Untitled'}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {timeAgo(session.created_at)} · {session.word_count.toLocaleString()} words ·{' '}
+                    {session.posts_generated} generated · {session.posts_saved} saved
+                  </p>
+                </div>
+                <button type="button" onClick={() => handleDeleteSession(session.id)}
+                  className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => handleViewPosts(session)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-gray-500 hover:bg-gray-50 border border-[#E5E4E0]">
+                  {expandedSessions.has(session.id) ? <><EyeOff className="w-3 h-3" />Hide</> : <><Eye className="w-3 h-3" />View posts</>}
+                </button>
+                <button type="button" onClick={() => handleReuseSession(session)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#1D9E75] bg-[#E1F5EE] hover:bg-[#1D9E75]/20">
+                  Generate more →
+                </button>
+              </div>
+              {expandedSessions.has(session.id) && (
+                <div className="space-y-2 pt-1 border-t border-[#E5E4E0]">
+                  {(sessionPosts[session.id] ?? []).slice(0, 3).map((content, i) => (
+                    <div key={i} className="bg-gray-50 rounded-xl p-3 flex items-start justify-between gap-2">
+                      <p className="text-xs text-gray-600 leading-relaxed flex-1">{content.slice(0, 100)}…</p>
+                      <button type="button" onClick={() => handleCopy(content)}
+                        className="text-[10px] text-[#1D9E75] font-semibold flex-shrink-0 hover:underline">Copy</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   // ── Source input step (Step 0) ─────────────────────────────────────────────
   const SourceInputStep = (
     <div className="bg-white rounded-2xl border border-[#E5E4E0] p-6 space-y-5">
@@ -475,10 +664,10 @@ export default function RepurposePage() {
           {currentStep === 0 && SourceInputStep}
           {currentStep === 1 && ExtractionPreviewStep}
           {currentStep === 2 && ConfigureStep}
-          {currentStep === 3 && <span>Step 3 placeholder</span>}
+          {currentStep === 3 && ResultsStep}
         </div>
       )}
-      {activeTab === 'history' && <span>History placeholder</span>}
+      {activeTab === 'history' && HistoryTab}
     </div>
   )
 }
