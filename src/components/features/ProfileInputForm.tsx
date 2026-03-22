@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { PROFILE_GOALS, OPTIMIZER_LIMITS } from '@/lib/profileOptimizerConfig'
 import type { ProfileInputData } from '@/types'
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react'
+import { ChevronRight, Check } from 'lucide-react'
 
 // ─── Section labels ────────────────────────────────────────────────────────────
 
@@ -85,8 +85,8 @@ export default function ProfileInputForm({
   initialGoal     = '',
   initialAudience = '',
   initialKeywords = ['', '', '', '', ''],
-  onComplete,
-  isAnalyzing,
+  onComplete: _onComplete,
+  isAnalyzing: _isAnalyzing,
 }: Props) {
   const [activeSection,   setActiveSection]   = useState(0)
   const [goal,            setGoal]            = useState(initialGoal)
@@ -96,7 +96,7 @@ export default function ProfileInputForm({
       ? initialKeywords
       : ['', '', '', '', ''],
   )
-  const [formData, setFormData] = useState<ProfileInputData>({
+  const [formData, _setFormData] = useState<ProfileInputData>({
     ...DEFAULT_FORM_DATA,
     ...initialData,
     previous_roles:
