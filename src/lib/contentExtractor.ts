@@ -344,7 +344,8 @@ export async function extractFromPdf(buffer: Buffer): Promise<ExtractedContent> 
   try {
     // Dynamic import to avoid Next.js build-time issues with pdf-parse
     const pdfParseModule = await import('pdf-parse')
-    const pdfParse = pdfParseModule.default
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfParse = (pdfParseModule as any).default ?? pdfParseModule
     const data = await pdfParse(buffer)
 
     const rawText = data.text ?? ''
