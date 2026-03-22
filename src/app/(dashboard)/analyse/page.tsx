@@ -539,7 +539,7 @@ export default function AnalysePage() {
                 <p className="text-xs text-amber-700 mt-1">
                   Compare up to 5 versions of a post to see which is strongest before publishing.
                 </p>
-                <a href="/dashboard/settings"
+                <a href="/settings"
                   className="text-xs text-teal-600 font-medium hover:underline mt-2 inline-block">
                   Upgrade to Pro →
                 </a>

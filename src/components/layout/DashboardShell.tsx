@@ -155,6 +155,15 @@ export default function DashboardShell({ children, profile }: DashboardShellProp
     }
   }
 
+  // Global unhandled promise rejection guard
+  useEffect(() => {
+    const handler = (e: PromiseRejectionEvent) => {
+      console.error('[unhandledrejection]', e.reason)
+    }
+    window.addEventListener('unhandledrejection', handler)
+    return () => window.removeEventListener('unhandledrejection', handler)
+  }, [])
+
   // Close drawer on route change
   useEffect(() => { setDrawerOpen(false) }, [pathname])
 

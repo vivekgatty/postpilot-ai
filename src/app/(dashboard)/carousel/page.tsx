@@ -78,7 +78,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 function UpgradeModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-8 w-[400px] flex flex-col items-center gap-4 shadow-2xl">
+      <div className="bg-white rounded-xl p-8 w-full max-w-[400px] mx-4 flex flex-col items-center gap-4 shadow-2xl">
         <div className="w-10 h-10 bg-[#E1F5EE] rounded-full flex items-center justify-center">
           <Download className="w-5 h-5 text-[#1D9E75]" />
         </div>
@@ -88,7 +88,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
           Available on Starter plan and above.
         </p>
         <a
-          href="/dashboard/settings"
+          href="/settings"
           className="w-full py-2.5 rounded-xl bg-[#1D9E75] hover:bg-[#178a64] text-white text-sm font-bold text-center transition-colors"
         >
           Upgrade to Starter

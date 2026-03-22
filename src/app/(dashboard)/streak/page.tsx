@@ -653,7 +653,7 @@ export default function StreakPage() {
                         Earn streak freezes to protect your streak on days you can&apos;t post.
                       </p>
                       <a
-                        href="/dashboard/settings"
+                        href="/settings"
                         className="inline-block mt-2 text-[12px] font-semibold text-[#1D9E75] hover:underline"
                       >
                         Upgrade to Pro →
