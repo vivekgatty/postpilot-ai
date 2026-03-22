@@ -23,7 +23,7 @@ export async function GET() {
 
     // Fetch history for each audit
     const auditIds = (audits ?? []).map((a: { id: string }) => a.id)
-    let historyMap: Record<string, unknown[]> = {}
+    const historyMap: Record<string, unknown[]> = {}
 
     if (auditIds.length > 0) {
       const { data: historyRows } = await supabase
