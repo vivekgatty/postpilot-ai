@@ -444,10 +444,82 @@ export interface RepurposeAngle {
 }
 
 export interface CarouselSlide {
+  id: string
   slide_number: number
-  type: 'title' | 'content' | 'cta'
+  type: 'title' | 'content' | 'summary' | 'cta'
   heading: string
   body: string
+  sub_line?: string
+  cta_text?: string
+  author_handle?: string
+  author_name?: string
+  number_badge?: string
+  supporting_element?: string
+}
+
+export interface CarouselTheme {
+  id: string
+  label: string
+  description: string
+  plan_required: 'free' | 'starter' | 'pro' | 'agency'
+  background: string
+  text_color: string
+  accent_color: string
+  secondary_text: string
+  heading_font_size: number
+  body_font_size: number
+  preview_gradient?: string[]
+}
+
+export interface CarouselType {
+  id: string
+  label: string
+  description: string
+  best_for: string
+  slide_structure: string[]
+  plan_required: 'free' | 'starter' | 'pro' | 'agency'
+  icon: string
+  example_title: string
+}
+
+export interface CarouselConfig {
+  topic: string
+  carousel_type: string
+  theme_id: string
+  slide_count: number
+  tone_id: string
+  niche: string
+  aspect_ratio: 'square' | 'portrait'
+  accent_color?: string
+  show_slide_numbers: boolean
+  show_author_handle: boolean
+  show_branding: boolean
+  font_style: 'professional' | 'modern' | 'bold'
+}
+
+export interface CarouselData {
+  id?: string
+  title: string
+  topic: string
+  carousel_type: string
+  theme_id: string
+  aspect_ratio: 'square' | 'portrait'
+  accent_color?: string
+  show_slide_numbers: boolean
+  show_author_handle: boolean
+  show_branding: boolean
+  font_style: string
+  slides: CarouselSlide[]
+  status: 'draft' | 'exported' | 'published'
+  niche?: string
+  tone_id?: string
+}
+
+export interface AuthorBranding {
+  full_name: string
+  handle: string
+  avatar_url?: string
+  niche?: string
 }
 
 export interface RepurposedPost {
