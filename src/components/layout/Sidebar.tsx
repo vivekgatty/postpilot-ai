@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -16,6 +17,7 @@ import {
   Layout,
   RefreshCw,
   LayoutTemplate,
+  Flame,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/constants'
@@ -38,6 +40,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Layout,
   RefreshCw,
   LayoutTemplate,
+  Flame,
 }
 
 // ── Plan badge ────────────────────────────────────────────────────────────────
@@ -69,6 +72,15 @@ export default function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname()
   const router   = useRouter()
   const isFree   = !profile || profile.plan === 'free'
+
+  const [streakCount, setStreakCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/streak/state')
+      .then(r => r.json())
+      .then(d => setStreakCount(d?.state?.publish_streak ?? 0))
+      .catch(() => setStreakCount(null))
+  }, [])
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -121,6 +133,18 @@ export default function Sidebar({ profile }: SidebarProps) {
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#1D9E75]/10 text-[#1D9E75]">
                   NEW
                 </span>
+              )}
+
+              {item.href === '/dashboard/streak' && !isActive && streakCount !== null && (
+                streakCount === 0 ? (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">
+                    Start
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#1D9E75]/10 text-[#1D9E75]">
+                    🔥 {streakCount}
+                  </span>
+                )
               )}
 
               {item.href === '/dashboard/audit' && !isActive && (

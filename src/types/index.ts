@@ -736,6 +736,87 @@ export interface BulkAnalysisSession {
   created_at?: string
 }
 
+// ─── Streak Tracker ───────────────────────────────────────────────────────────
+
+export interface StreakLog {
+  id: string
+  user_id: string
+  log_date: string
+  log_type: 'publish' | 'engage' | 'plan'
+  source: 'manual' | 'postpika' | 'self_report'
+  post_id?: string
+  comment_urls?: string[]
+  notes?: string
+  created_at: string
+}
+
+export interface StreakState {
+  user_id: string
+  publish_streak: number
+  publish_best: number
+  publish_last_date: string | null
+  engage_streak: number
+  engage_best: number
+  engage_last_date: string | null
+  plan_streak: number
+  plan_best: number
+  plan_last_date: string | null
+  grace_days_remaining: number
+  grace_days_reset_at: string | null
+  freeze_count: number
+  freeze_active_until: string | null
+  total_posts_logged: number
+  longest_gap_days: number
+  updated_at: string
+}
+
+export interface StreakAchievement {
+  id: string
+  user_id: string
+  achievement_key: string
+  achievement_label: string
+  streak_type: 'publish' | 'engage' | 'plan' | 'combo'
+  milestone_value?: number
+  earned_at: string
+  share_card_generated: boolean
+  milestone_post_draft?: string
+}
+
+export interface StreakReminder {
+  user_id: string
+  email_enabled: boolean
+  reminder_time: string
+  timezone: string
+  last_reminder_sent_at?: string
+  streak_break_notified_at?: string
+}
+
+export interface CalendarDay {
+  date: string
+  publish_logged: boolean
+  engage_logged: boolean
+  plan_logged: boolean
+  is_today: boolean
+  is_future: boolean
+  streak_at_day: number
+  is_milestone_day: boolean
+  is_grace_day: boolean
+  is_streak_break: boolean
+  day_of_week: number
+}
+
+export interface StreakDashboardData {
+  state: StreakState
+  recent_logs: StreakLog[]
+  achievements: StreakAchievement[]
+  calendar_days: CalendarDay[]
+  posted_today_publish: boolean
+  posted_today_engage: boolean
+  posted_today_plan: boolean
+  weekly_pattern: Record<string, number>
+  monthly_consistency: { month: string; rate: number; posted: number; planned: number }[]
+}
+
 // ─── Personal Brand Audit ──────────────────────────────────────────────────────
 
 export interface AuditAnswer {

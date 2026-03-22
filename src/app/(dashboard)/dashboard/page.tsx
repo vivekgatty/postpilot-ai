@@ -3,6 +3,7 @@ import { Sparkles, FileText, Calendar, TrendingUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { PLAN_LIMITS } from '@/lib/constants'
 import UsageMeter from '@/components/features/UsageMeter'
+import StreakDashboardWidget from '@/components/features/StreakDashboardWidget'
 import type { Post } from '@/types'
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -193,8 +194,11 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Right column — quick action + usage */}
+        {/* Right column — streak widget + quick actions + usage */}
         <div className="flex flex-col gap-5">
+
+          {/* Streak widget */}
+          <StreakDashboardWidget />
 
           {/* Quick action card */}
           <div className="bg-white rounded-2xl border border-[#E5E4E0] p-5">

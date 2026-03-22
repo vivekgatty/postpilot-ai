@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import Sidebar from './Sidebar'
 import Avatar from '@/components/ui/Avatar'
 import UsageMeter from '@/components/features/UsageMeter'
+import FloatingStreakButton from '@/components/features/FloatingStreakButton'
+import LogTodayModal from '@/components/features/LogTodayModal'
 import { ToastProvider } from '@/components/ui/Toast'
 import type { Profile } from '@/types'
 
@@ -115,6 +117,44 @@ export default function DashboardShell({ children, profile }: DashboardShellProp
   const title             = getPageTitle(pathname)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
+  // ── Streak floating button state ───────────────────────────────────────────
+  const [streakData,    setStreakData]    = useState<{ streak: number; postedToday: boolean } | null>(null)
+  const [showLogModal,  setShowLogModal]  = useState(false)
+  const [isLogging,     setIsLogging]     = useState(false)
+
+  useEffect(() => {
+    fetch('/api/streak/state')
+      .then(r => r.json())
+      .then(d => setStreakData({
+        streak:     d.state?.publish_streak     ?? 0,
+        postedToday: d.posted_today_publish     ?? false,
+      }))
+      .catch(() => {})
+  }, [])
+
+  async function handleLayoutLog() {
+    setIsLogging(true)
+    try {
+      const res  = await fetch('/api/streak/log', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ log_type: 'publish', source: 'self_report' }),
+      })
+      const data = await res.json()
+      if (res.ok && !data.already_logged) {
+        setStreakData(prev => prev
+          ? { ...prev, streak: data.new_streak ?? prev.streak, postedToday: true }
+          : null,
+        )
+      }
+      setShowLogModal(false)
+    } catch {
+      // silently ignore layout-level log errors
+    } finally {
+      setIsLogging(false)
+    }
+  }
+
   // Close drawer on route change
   useEffect(() => { setDrawerOpen(false) }, [pathname])
 
@@ -194,6 +234,23 @@ export default function DashboardShell({ children, profile }: DashboardShellProp
           </main>
         </div>
       </div>
+        <FloatingStreakButton
+          streak={streakData?.streak ?? 0}
+          postedToday={streakData?.postedToday ?? false}
+          onOpenModal={() => setShowLogModal(true)}
+        />
+
+        <LogTodayModal
+          isOpen={showLogModal}
+          onClose={() => setShowLogModal(false)}
+          onLog={async () => { await handleLayoutLog() }}
+          postedTodayPublish={streakData?.postedToday ?? false}
+          postedTodayEngage={false}
+          postedTodayPlan={false}
+          plan={profile?.plan ?? 'free'}
+          currentStreak={streakData?.streak ?? 0}
+          isLogging={isLogging}
+        />
     </ToastProvider>
   )
 }
