@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import { getLevelFromScore, getNextLevel } from '@/lib/auditConfig'
 import type { AuditDimensionScore } from '@/types'
 
@@ -14,7 +15,10 @@ function extractJSON(text: string): unknown {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { auditId?: string }
+    let body: { auditId?: string }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { auditId } = body
 
     if (!auditId) {
@@ -41,6 +45,22 @@ export async function POST(req: NextRequest) {
     // If user is authenticated, verify ownership
     if (user && audit.user_id && audit.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Rate-limit: max 3 improvement requests per audit per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { count: recentCount } = await supabase
+      .from('usage_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('action', 'brand_audit_improve')
+      .contains('metadata', { audit_id: auditId })
+      .gte('created_at', oneHourAgo)
+
+    if ((recentCount ?? 0) >= 3) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 },
+      )
     }
 
     const currentScore    = audit.total_score ?? 0
@@ -109,6 +129,8 @@ Return ONLY valid JSON:
 
     return NextResponse.json({ improvement: parsed })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[audit/improve]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

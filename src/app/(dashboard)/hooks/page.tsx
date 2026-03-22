@@ -195,6 +195,7 @@ function StylePill({
       data-active={selected}
       onClick={isLocked ? undefined : onToggle}
       disabled={isLocked}
+      title={isLocked ? 'Requires Starter plan — upgrade in Settings' : undefined}
       className={cn(
         'relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150',
         borderClass,
@@ -274,8 +275,8 @@ export default function HooksPage() {
           selectedStyles: Array.from(selectedStyles),
         }),
       })
-      const data = await res.json() as { hooks?: HookResult[]; error?: string }
-      if (!res.ok) throw new Error(data.error ?? 'Generation failed')
+      const data = await res.json() as { hooks?: HookResult[]; error?: string; message?: string }
+      if (!res.ok) throw new Error(data.message ?? data.error ?? 'Generation failed')
       setHooks(data.hooks ?? [])
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Generation failed — please try again')
@@ -340,7 +341,7 @@ export default function HooksPage() {
             id="idea" value={idea}
             onChange={e => setIdea(e.target.value)}
             placeholder="E.g. I grew my LinkedIn to 5k followers in 60 days without paid ads..."
-            rows={3}
+            rows={3} maxLength={2000}
             className="w-full border border-[#E5E4E0] rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75] transition-colors placeholder:text-gray-400"
             style={{ minHeight: '80px' }}
           />

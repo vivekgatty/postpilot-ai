@@ -22,8 +22,9 @@ export default function PlannerSettingsDrawer({ pillars: initialPillars, setting
   const [settings, setSettings]       = useState(initialSettings)
   const [pillars, setPillars]         = useState(initialPillars)
   const [editIdx, setEditIdx]         = useState<number | null>(null)
-  const [isSaving, setIsSaving]       = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [isSaving, setIsSaving]             = useState(false)
+  const [saveSuccess, setSaveSuccess]       = useState(false)
+  const [isDisconnecting, setIsDisconnecting] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState<number | null>(null)
 
   const updateSettings = (patch: Partial<PlannerSettings>) => {
@@ -90,8 +91,13 @@ export default function PlannerSettingsDrawer({ pillars: initialPillars, setting
 
   const handleDisconnectLinkedIn = async () => {
     if (!confirm('Disconnect your LinkedIn account?')) return
-    await fetch('/api/linkedin/publish', { method: 'DELETE' }).catch(() => {})
-    onSaved(settings, pillars)
+    setIsDisconnecting(true)
+    try {
+      await fetch('/api/linkedin/publish', { method: 'DELETE' }).catch(() => {})
+      onSaved(settings, pillars)
+    } finally {
+      setIsDisconnecting(false)
+    }
   }
 
   return (
@@ -233,8 +239,9 @@ export default function PlannerSettingsDrawer({ pillars: initialPillars, setting
                   Token expires {new Date(connection.token_expires_at).toLocaleDateString('en-IN')}.
                 </p>
                 <button type="button" onClick={handleDisconnectLinkedIn}
-                  className="mt-3 text-xs text-red-500 hover:underline">
-                  Disconnect LinkedIn
+                  disabled={isDisconnecting}
+                  className="mt-3 text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isDisconnecting ? 'Disconnecting…' : 'Disconnect LinkedIn'}
                 </button>
               </div>
             ) : (

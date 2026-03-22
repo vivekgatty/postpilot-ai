@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Copy, Check, RefreshCw, CalendarPlus, Bookmark, BookmarkCheck, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { RepurposedPost, CarouselSlide } from '@/types'
@@ -80,6 +80,11 @@ export default function RepurposePostCard({
   const [slidesOpen,    setSlidesOpen]    = useState(false)
   const [saved,         setSaved]         = useState(post.saved ?? false)
 
+  // Sync saved state when parent updates post.saved (e.g. after save-all)
+  useEffect(() => {
+    if (post.saved) setSaved(true)
+  }, [post.saved])
+
   const isCarousel    = post.format === 'carousel'
   const hasLongContent = post.content.length > 400
   const displayContent = !expanded && hasLongContent
@@ -95,7 +100,6 @@ export default function RepurposePostCard({
   const handleSave = () => {
     if (saved) return
     onSave(post)
-    setSaved(true)
   }
 
   return (

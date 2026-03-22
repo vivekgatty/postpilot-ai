@@ -125,7 +125,12 @@ export default function ProfileRecommendations({
 
   // ── Filter + sort ────────────────────────────────────────────────────────────
 
-  const allRecs = audit.recommendations
+  // Derive is_done from completed_recommendations so card state is always in
+  // sync with the audit's completion tracking (which is updated client-side).
+  const completedSet = new Set(audit.completed_recommendations)
+  const allRecs = audit.recommendations.map((r) =>
+    completedSet.has(r.id) ? { ...r, is_done: true } : r,
+  )
   const filtered = sortRecs(
     activeFilter === 'quick'    ? allRecs.filter((r) => r.priority === 'high') :
     activeFilter === 'rewrites' ? allRecs.filter((r) => r.type === 'rewrite') :

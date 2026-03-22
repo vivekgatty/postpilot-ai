@@ -11,6 +11,13 @@ const PROTECTED_PATHS = [
   '/analytics',
   '/settings',
   '/onboarding',
+  // These pages live under the (dashboard) route group at root-level URLs,
+  // not under /dashboard/, so they need their own entries here.
+  '/hooks',
+  '/analyse',
+  '/carousel',
+  '/streak',
+  '/profile-optimizer',
 ]
 
 // API routes that are exempt from auth checks

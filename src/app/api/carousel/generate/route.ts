@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateCarouselSlides } from '@/lib/carouselGenerator'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import { getTypeById, CAROUSEL_LIMITS } from '@/lib/carouselConfig'
 import type { PlanType, CarouselConfig, AuthorBranding } from '@/types'
 
@@ -56,7 +57,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse and validate body
-    const body = await req.json() as Partial<CarouselConfig>
+    let body: Partial<CarouselConfig>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const {
       topic,
       carousel_type,
@@ -183,6 +187,8 @@ export async function POST(req: NextRequest) {
       title:       result.title,
     }, { status: 201 })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/carousel/generate]', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Failed to generate carousel' }, { status: 500 })
   }

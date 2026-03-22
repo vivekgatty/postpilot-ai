@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { randomBytes } from 'crypto'
+import { getLevelFromScore, getTierFromLevel } from '@/lib/auditConfig'
+import type { AuditDimensionScore } from '@/types'
 
 function extractLinkedInUsername(url: string): string | null {
   const match = url.match(/linkedin\.com\/in\/([^/?#\s]+)/i)
@@ -11,10 +13,13 @@ function extractLinkedInUsername(url: string): string | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as {
+    let body: {
       linkedin_url?: string
       full_name?: string
       profile_photo_url?: string
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     const { linkedin_url, full_name, profile_photo_url } = body
@@ -42,7 +47,7 @@ export async function POST(req: NextRequest) {
     // Check for existing unlocked audit for this URL
     const { data: existing } = await supabase
       .from('brand_audits')
-      .select('id')
+      .select('*')
       .eq('linkedin_url', normalised)
       .eq('is_unlocked', true)
       .order('created_at', { ascending: false })
@@ -50,7 +55,29 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (existing) {
-      return NextResponse.json({ exists: true, auditId: existing.id })
+      const level = getLevelFromScore(existing.total_score)
+      const tier  = getTierFromLevel(level.tier)
+      const dimensionScores: AuditDimensionScore[] = Array.isArray(existing.scores) ? existing.scores : []
+      const result = {
+        id:                  existing.id,
+        linkedin_url:        existing.linkedin_url,
+        linkedin_username:   existing.linkedin_username,
+        full_name:           existing.full_name,
+        profile_photo_url:   existing.profile_photo_url,
+        sample_post_content: existing.sample_post_content ?? null,
+        total_score:         existing.total_score,
+        tier_key:            level.tier,
+        tier_label:          tier?.label ?? level.tier,
+        level_name:          level.label,
+        level_key:           level.key,
+        dimension_scores:    dimensionScores,
+        ai_top_actions:      Array.isArray(existing.ai_top_actions) ? existing.ai_top_actions : [],
+        ai_content_quality:  existing.ai_content_quality ?? null,
+        is_unlocked:         true,
+        share_token:         existing.share_token,
+        created_at:          existing.created_at,
+      }
+      return NextResponse.json({ exists: true, auditId: existing.id, result })
     }
 
     // Generate a unique share token

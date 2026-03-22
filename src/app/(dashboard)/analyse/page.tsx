@@ -78,12 +78,19 @@ export default function AnalysePage() {
   }, [profile?.niche])
 
   // ── URL params ─────────────────────────────────────────────────────────────
-  const postIdRef        = useRef<string | null>(null)
-  const handleAnalyseRef = useRef<() => Promise<void>>(async () => {})
+  const postIdRef             = useRef<string | null>(null)
+  const handleAnalyseRef      = useRef<() => Promise<void>>(async () => {})
+  // Holds URL-param content so handleAnalyse can read it synchronously
+  // (setState is async; reading state directly would give stale empty value)
+  const pendingAutoContentRef = useRef<string | null>(null)
 
   const handleAnalyse = useCallback(async () => {
     setIsAnalysing(true)
-    const contentToAnalyse = editedContent || postContent
+    // pendingAutoContentRef carries URL-param content from the mount effect
+    // because setState is async and state would be empty at that call site.
+    const autoContent      = pendingAutoContentRef.current
+    pendingAutoContentRef.current = null
+    const contentToAnalyse = autoContent || editedContent || postContent
     if (contentToAnalyse.length < 50) {
       toast.error('Post must be at least 50 characters')
       setIsAnalysing(false)
@@ -141,6 +148,9 @@ export default function AnalysePage() {
       postIdRef.current = postIdParam
     }
     if (auto === 'true' && content) {
+      // Set content via ref BEFORE calling, because setState above is async
+      // and handleAnalyse would otherwise read stale empty state.
+      pendingAutoContentRef.current = decodeURIComponent(content)
       handleAnalyseRef.current()
     }
     // Run once on mount only
@@ -529,7 +539,7 @@ export default function AnalysePage() {
                 <p className="text-xs text-amber-700 mt-1">
                   Compare up to 5 versions of a post to see which is strongest before publishing.
                 </p>
-                <a href="/dashboard/settings"
+                <a href="/settings"
                   className="text-xs text-teal-600 font-medium hover:underline mt-2 inline-block">
                   Upgrade to Pro →
                 </a>

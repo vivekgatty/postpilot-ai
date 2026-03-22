@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateAngles } from '@/lib/repurposeAngles'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import type { PlanType } from '@/types'
 
 // ── POST /api/repurpose/angles ────────────────────────────────────────────────
@@ -13,7 +14,10 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as { session_id: string; post_count: number; niche?: string }
+    let body: { session_id: string; post_count: number; niche?: string; extracted_text?: string }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { session_id, post_count } = body
 
     if (!session_id) return NextResponse.json({ error: 'session_id required' }, { status: 400 })
@@ -41,8 +45,17 @@ export async function POST(req: NextRequest) {
     const isPaid = plan !== 'free'
     const niche  = body.niche ?? profile?.niche ?? 'Other'
 
+    // Persist user-edited text if provided
+    const extractedText = body.extracted_text ?? session.extracted_text ?? ''
+    if (body.extracted_text && body.extracted_text !== session.extracted_text) {
+      await supabase
+        .from('repurpose_sessions')
+        .update({ extracted_text: body.extracted_text })
+        .eq('id', session_id)
+    }
+
     const { angles, is_generic } = await generateAngles(
-      session.extracted_text ?? '',
+      extractedText,
       session.source_title   ?? '',
       session.source_author  ?? '',
       niche,
@@ -58,6 +71,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ angles, is_generic })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/repurpose/angles]', err)
     return NextResponse.json({ error: 'Failed to generate angles' }, { status: 500 })
   }

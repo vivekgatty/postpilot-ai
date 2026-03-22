@@ -73,6 +73,7 @@ export default function RepurposePage() {
   const [sessionPosts,      setSessionPosts]      = useState<Record<string, string[]>>({})
   const [genMsgIdx,       setGenMsgIdx]       = useState(0)
   const [showFullText,    setShowFullText]     = useState(false)
+  const [addingToBank,    setAddingToBank]    = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handlePdfUpload = useCallback((file: File) => {
@@ -121,7 +122,7 @@ export default function RepurposePage() {
         return
       }
       if (!res.ok) {
-        const msg = data.error ?? 'Extraction failed.'
+        const msg = data.message ?? data.error ?? 'Extraction failed.'
         toast.error(msg)
         setUrlError(msg)
         return
@@ -148,7 +149,7 @@ export default function RepurposePage() {
     try {
       const res  = await fetch('/api/repurpose/angles', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, post_count: postCount }),
+        body: JSON.stringify({ session_id: sessionId, post_count: postCount, extracted_text: editableText || undefined }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -158,7 +159,7 @@ export default function RepurposePage() {
       }
     } catch { toast.error('Could not load angles.') }
     setAnglesLoading(false)
-  }, [sessionId, postCount, toast])
+  }, [sessionId, postCount, editableText, toast])
 
   // ── Generate ───────────────────────────────────────────────────────────────
   const handleGenerate = useCallback(async () => {
@@ -288,9 +289,18 @@ export default function RepurposePage() {
   const isLinkedIn     = isLinkedInUrl(urlInput)
   const platformConfig = SOURCE_PLATFORMS[detectedPlatform]
   const wordCount      = textInput.split(/\s+/).filter(Boolean).length
+
+  function isValidUrl(u: string): boolean {
+    try {
+      const parsed = new URL(u.trim())
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch { return false }
+  }
+
+  const urlIsValid     = isValidUrl(urlInput)
   const canExtract     = !isExtracting && (
     pdfFile !== null ||
-    (sourceTab === 'url' ? urlInput.trim().length >= 10 && !isLinkedIn : wordCount >= 50)
+    (sourceTab === 'url' ? urlIsValid && !isLinkedIn : wordCount >= 50)
   )
 
   // ── Step 1: Extraction preview ─────────────────────────────────────────────
@@ -460,16 +470,23 @@ export default function RepurposePage() {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1D9E75] hover:bg-[#178a64] text-white text-xs font-bold transition-colors">
             <Bookmark className="w-3.5 h-3.5" />Save all drafts
           </button>
-          <button type="button" onClick={async () => {
-            await Promise.all(generatedPosts.map(p =>
-              fetch('/api/planner/content-bank', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: p.angle_title, topic: p.content.slice(0, 200), source: 'manual' }),
-              })
-            ))
-            toast.success('Added to Content Bank!')
-          }} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E4E0] text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-            Add to Content Bank
+          <button type="button" disabled={addingToBank} onClick={async () => {
+            setAddingToBank(true)
+            try {
+              await Promise.all(generatedPosts.map(p =>
+                fetch('/api/planner/content-bank', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ title: p.angle_title, topic: p.content.slice(0, 200), source: 'manual' }),
+                })
+              ))
+              toast.success('Added to Content Bank!')
+            } catch {
+              toast.error('Failed to add to Content Bank')
+            } finally {
+              setAddingToBank(false)
+            }
+          }} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E4E0] text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+            {addingToBank ? 'Adding…' : 'Add to Content Bank'}
           </button>
           <button type="button" onClick={() => toast.info('Go to Content Planner to schedule these posts')}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E4E0] text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -652,7 +669,12 @@ export default function RepurposePage() {
               </p>
             </div>
           )}
-          {urlError && !isLinkedIn && (
+          {urlInput.trim() && !isLinkedIn && !urlIsValid && (
+            <p className="text-xs text-red-600 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />Please enter a valid URL starting with https://
+            </p>
+          )}
+          {urlError && !isLinkedIn && urlIsValid && (
             <p className="text-xs text-red-600 flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" />{urlError}
             </p>

@@ -78,7 +78,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 function UpgradeModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-8 w-[400px] flex flex-col items-center gap-4 shadow-2xl">
+      <div className="bg-white rounded-xl p-8 w-full max-w-[400px] mx-4 flex flex-col items-center gap-4 shadow-2xl">
         <div className="w-10 h-10 bg-[#E1F5EE] rounded-full flex items-center justify-center">
           <Download className="w-5 h-5 text-[#1D9E75]" />
         </div>
@@ -88,7 +88,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
           Available on Starter plan and above.
         </p>
         <a
-          href="/dashboard/settings"
+          href="/settings"
           className="w-full py-2.5 rounded-xl bg-[#1D9E75] hover:bg-[#178a64] text-white text-sm font-bold text-center transition-colors"
         >
           Upgrade to Starter
@@ -141,6 +141,7 @@ export default function CarouselPage() {
   const [isRegenerating,    setIsRegenerating]    = useState<Record<string, boolean>>({})
   const [savedCarousels,    setSavedCarousels]    = useState<CarouselData[]>([])
   const [historyLoading,    setHistoryLoading]    = useState(false)
+  const [deletingCarouselId, setDeletingCarouselId] = useState<string | null>(null)
   const [showUpgradeModal,  setShowUpgradeModal]  = useState(false)
   const [generatingMessage, setGeneratingMessage] = useState('')
   const [niche,             setNiche]             = useState('Other')
@@ -729,6 +730,10 @@ export default function CarouselPage() {
                   onRegenerateSlide={handleRegenerateSlide}
                   isRegenerating={isRegenerating}
                   selectedSlideId={slides[selectedSlideIndex]?.id}
+                  onSelectSlide={(slideId) => {
+                    const idx = slides.findIndex(s => s.id === slideId)
+                    if (idx !== -1) setSelectedSlideIndex(idx)
+                  }}
                 />
               </div>
 
@@ -739,26 +744,43 @@ export default function CarouselPage() {
                 <div className="bg-white border border-[#E5E4E0] rounded-xl p-3">
                   <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Theme</p>
                   <div className="flex gap-2 overflow-x-auto pb-1">
-                    {CAROUSEL_THEMES.map(theme => (
-                      <button
-                        key={theme.id}
-                        onClick={() => handleUpdateCarousel({ theme_id: theme.id })}
-                        title={theme.label}
-                        className={cn(
-                          'flex-shrink-0 w-9 h-9 rounded-lg border-2 transition-all relative overflow-hidden',
-                          selectedTheme === theme.id
-                            ? 'border-[#1D9E75] scale-110 shadow-sm'
-                            : 'border-transparent hover:border-gray-300',
-                        )}
-                        style={{ background: theme.background }}
-                      >
-                        <span
-                          className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
-                          style={{ background: theme.accent_color }}
-                        />
-                        <span className="sr-only">{theme.label}</span>
-                      </button>
-                    ))}
+                    {CAROUSEL_THEMES.map(theme => {
+                      const themeRank   = PLAN_ORDER.indexOf(theme.plan_required as typeof PLAN_ORDER[number])
+                      const isThemeLocked = themeRank > planIndex
+                      return (
+                        <button
+                          key={theme.id}
+                          onClick={() => {
+                            if (isThemeLocked) {
+                              toast.info(`"${theme.label}" requires ${theme.plan_required} plan`)
+                              return
+                            }
+                            handleUpdateCarousel({ theme_id: theme.id })
+                          }}
+                          title={isThemeLocked ? `${theme.label} — ${theme.plan_required} plan` : theme.label}
+                          className={cn(
+                            'flex-shrink-0 w-9 h-9 rounded-lg border-2 transition-all relative overflow-hidden',
+                            isThemeLocked
+                              ? 'opacity-50 cursor-not-allowed border-transparent'
+                              : selectedTheme === theme.id
+                                ? 'border-[#1D9E75] scale-110 shadow-sm'
+                                : 'border-transparent hover:border-gray-300',
+                          )}
+                          style={{ background: theme.background }}
+                        >
+                          <span
+                            className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
+                            style={{ background: theme.accent_color }}
+                          />
+                          {isThemeLocked && (
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Lock className="w-2.5 h-2.5 text-white" />
+                            </span>
+                          )}
+                          <span className="sr-only">{theme.label}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -919,19 +941,25 @@ export default function CarouselPage() {
 
                     <button
                       onClick={async () => {
-                        if (!c.id) return
+                        if (!c.id || deletingCarouselId) return
+                        setDeletingCarouselId(c.id)
                         try {
                           await fetch(`/api/carousel/${c.id}`, { method: 'DELETE' })
                           setSavedCarousels(prev => prev.filter(x => x.id !== c.id))
                           toast.success('Carousel deleted')
                         } catch {
                           toast.error('Could not delete carousel')
+                        } finally {
+                          setDeletingCarouselId(null)
                         }
                       }}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      disabled={deletingCarouselId === c.id}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Delete carousel"
                     >
-                      <X size={14} />
+                      {deletingCarouselId === c.id
+                        ? <span className="w-3.5 h-3.5 border-2 border-gray-300 border-t-red-400 rounded-full animate-spin inline-block" />
+                        : <X size={14} />}
                     </button>
                   </div>
                 </div>

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getLevelFromScore, getNextLevel } from '@/lib/auditConfig'
 import { sendImprovementEmail, ImprovementSuggestion } from '@/lib/resend'
 import { anthropic } from '@/lib/anthropic'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import type { AuditDimensionScore } from '@/types'
 
 function extractJSON(text: string): unknown {
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  try {
   const supabase = await createClient()
 
   // Find audits that were unlocked 29-31 days ago that haven't received improvement email
@@ -131,9 +133,18 @@ Generate 5 improvement suggestions for their weakest dimensions. Return ONLY val
 
       processed++
     } catch (err) {
+      const anthropicRes = handleAnthropicError(err)
+      if (anthropicRes) {
+        console.error('[cron/audit-reminders] Anthropic error for audit', item.audit_id, err)
+        continue
+      }
       console.error('[cron/audit-reminders] error processing audit', item.audit_id, err)
     }
   }
 
   return NextResponse.json({ processed })
+  } catch (err) {
+    console.error('[cron/audit-reminders] unexpected error', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }

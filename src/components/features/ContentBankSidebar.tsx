@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Draggable, Droppable, DragDropContext, DropResult } from '@hello-pangea/dnd'
+import { Draggable, Droppable } from '@hello-pangea/dnd'
 import { cn } from '@/lib/utils'
 import { FORMAT_ICONS } from '@/lib/plannerConfig'
 import type { ContentBankItem, ContentPillar } from '@/types'
@@ -53,11 +53,6 @@ export default function ContentBankSidebar({
     if (filterSource && item.source !== filterSource) return false
     return true
   })
-
-  // DnD: content bank items are draggable to the calendar
-  const handleDragEnd: (result: DropResult) => void = () => {
-    // Calendar handles the drop via window.__dragBankItem
-  }
 
   const sidebarContent = (
     <div className="h-full flex flex-col">
@@ -176,10 +171,9 @@ export default function ContentBankSidebar({
 
       {/* Items list */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="content-bank" isDropDisabled>
-            {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+        <Droppable droppableId="content-bank" isDropDisabled>
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
                 {filtered.map((item, index) => (
                   <Draggable
                     key={item.id}
@@ -238,10 +232,9 @@ export default function ContentBankSidebar({
                   </Draggable>
                 ))}
                 {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+            </div>
+          )}
+        </Droppable>
 
         {filtered.length === 0 && (
           <div className="text-center py-8">

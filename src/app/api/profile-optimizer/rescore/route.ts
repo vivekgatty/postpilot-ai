@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateRescoredDimension } from '@/lib/profileAnalyzer'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import type { ProfileInputData, ProfileAuditDimension } from '@/types'
 
 // ── POST /api/profile-optimizer/rescore ──────────────────────────────────────
@@ -109,6 +110,8 @@ export async function POST(req: NextRequest) {
       new_projected_score: newTotalScore,
     })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/profile-optimizer/rescore]', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }

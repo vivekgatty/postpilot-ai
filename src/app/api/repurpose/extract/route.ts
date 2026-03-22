@@ -90,7 +90,10 @@ export async function POST(req: NextRequest) {
       }
     } else {
       // ── JSON body ─────────────────────────────────────────────────────────
-      const body = await req.json() as { url?: string; text?: string }
+      let body: { url?: string; text?: string }
+      try { body = await req.json() } catch {
+        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+      }
 
       if (body.url) {
         sourceUrl = body.url

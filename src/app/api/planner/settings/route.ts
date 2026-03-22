@@ -48,7 +48,10 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as Partial<PlannerSettings>
+    let body: Partial<PlannerSettings>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
 
     const posting_frequency = body.posting_frequency ?? 3
     if (posting_frequency < 1 || posting_frequency > 7) {

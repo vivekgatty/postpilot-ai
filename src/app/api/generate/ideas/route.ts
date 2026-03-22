@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient }              from '@/lib/supabase/server'
 import { anthropic, AI_MODEL }       from '@/lib/anthropic'
+import { handleAnthropicError }      from '@/lib/handleAnthropicError'
 import type { NicheType }            from '@/types'
 
 // ── Daily rate limit ──────────────────────────────────────────────────────────
@@ -44,7 +45,10 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // 2. Parse body
-    const body   = await req.json() as { niche?: NicheType }
+    let body: { niche?: NicheType }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const niche  = body.niche
     if (!niche) return NextResponse.json({ error: 'Niche is required' }, { status: 400 })
 
@@ -66,8 +70,13 @@ export async function POST(req: NextRequest) {
       messages:   [{ role: 'user', content: prompt }],
     })
 
-    const raw    = message.content[0].type === 'text' ? message.content[0].text : ''
-    const parsed = JSON.parse(extractJSON(raw)) as { ideas: Array<{ day: string; topic: string; hook: string; why: string }> }
+    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+    let parsed: { ideas: Array<{ day: string; topic: string; hook: string; why: string }> }
+    try {
+      parsed = JSON.parse(extractJSON(raw)) as typeof parsed
+    } catch {
+      return NextResponse.json({ error: 'AI returned an unexpected response. Please try again.' }, { status: 500 })
+    }
 
     // 5. Log usage
     await supabase.from('usage_logs').insert({
@@ -83,6 +92,8 @@ export async function POST(req: NextRequest) {
       remaining:   DAILY_LIMIT - usedToday - 1,
     })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('Generate ideas error:', err)
     return NextResponse.json({ error: 'Failed to generate ideas' }, { status: 500 })
   }

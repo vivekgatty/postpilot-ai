@@ -17,11 +17,14 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json()
+    let body: Record<string, unknown>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { log_type, source, post_id, comment_urls, notes, date } = body
 
     // Validate log_type
-    if (!VALID_LOG_TYPES.includes(log_type)) {
+    if (!VALID_LOG_TYPES.includes(log_type as typeof VALID_LOG_TYPES[number])) {
       return NextResponse.json({ error: 'Invalid log_type' }, { status: 400 })
     }
 
@@ -33,7 +36,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const log_date: string = date || getTodayDateString()
+    // Validate date format and range — only today or yesterday allowed
+    const todayStr     = getTodayDateString()
+    const yesterdayStr = (() => {
+      const d = new Date()
+      d.setDate(d.getDate() - 1)
+      return d.toISOString().split('T')[0]
+    })()
+
+    let log_date: string
+    if (!date) {
+      log_date = todayStr
+    } else {
+      if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return NextResponse.json({ error: 'date must be in YYYY-MM-DD format' }, { status: 400 })
+      }
+      if (date !== todayStr && date !== yesterdayStr) {
+        return NextResponse.json(
+          { error: 'date must be today or yesterday' },
+          { status: 400 },
+        )
+      }
+      log_date = date
+    }
 
     // Check if already logged for this user / date / type
     const { data: existing } = await supabase

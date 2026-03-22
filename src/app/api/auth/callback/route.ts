@@ -27,8 +27,8 @@ export async function GET(request: Request) {
     .single()
 
   if (profile?.onboarding_completed) {
-    return NextResponse.redirect(`${appUrl}/dashboard/generate`)
+    return NextResponse.redirect(`${appUrl}/generate`)
   }
 
-  return NextResponse.redirect(`${appUrl}/dashboard/onboarding`)
+  return NextResponse.redirect(`${appUrl}/onboarding`)
 }

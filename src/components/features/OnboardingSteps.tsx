@@ -4,7 +4,6 @@ import { useRef, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { NICHE_META, NICHE_OPTIONS } from '@/lib/constants'
-import { createClient } from '@/lib/supabase/client'
 import type { NicheType } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -83,6 +82,7 @@ export default function OnboardingSteps({
   const [visible, setVisible]           = useState(true)
   const [saving, setSaving]             = useState(false)
   const [avatarLoading, setAvatarLoading] = useState(false)
+  const [nameTouched, setNameTouched]   = useState(false)
   const fileInputRef                    = useRef<HTMLInputElement>(null)
 
   const [data, setData] = useState<OnboardingFormData>({
@@ -99,22 +99,18 @@ export default function OnboardingSteps({
     setTimeout(() => { setStep(next); setVisible(true) }, 180)
   }
 
-  // ── Avatar upload ─────────────────────────────────────────────────────────
+  // ── Avatar upload — routed through server API for validation ─────────────
   const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setAvatarLoading(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const ext  = file.name.split('.').pop() ?? 'jpg'
-      const path = `${user.id}/${Date.now()}.${ext}`
-      const { error: upErr } = await supabase.storage
-        .from('avatars').upload(path, file, { upsert: true })
-      if (!upErr) {
-        const { data: url } = supabase.storage.from('avatars').getPublicUrl(path)
-        setData(d => ({ ...d, avatar_url: url.publicUrl }))
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/user/avatar', { method: 'POST', body: form })
+      if (res.ok) {
+        const { avatarUrl } = await res.json() as { avatarUrl: string }
+        setData(d => ({ ...d, avatar_url: avatarUrl }))
       }
     } finally {
       setAvatarLoading(false)
@@ -235,9 +231,14 @@ export default function OnboardingSteps({
                 autoComplete="name"
                 value={data.full_name}
                 onChange={e => setData(d => ({ ...d, full_name: e.target.value }))}
+                onBlur={() => setNameTouched(true)}
                 placeholder="Priya Sharma"
+                maxLength={100}
                 className={inputCls}
               />
+              {nameTouched && !data.full_name.trim() && (
+                <p className="mt-1 text-xs text-red-500">Full name is required</p>
+              )}
             </div>
 
             <div>
@@ -250,6 +251,7 @@ export default function OnboardingSteps({
                 value={data.role}
                 onChange={e => setData(d => ({ ...d, role: e.target.value }))}
                 placeholder="Senior Product Manager at Razorpay"
+                maxLength={150}
                 className={inputCls}
               />
             </div>
@@ -265,9 +267,10 @@ export default function OnboardingSteps({
                 <input
                   id="ob-li"
                   type="text"
-                  value={data.linkedin_url.replace(/.*linkedin\.com\/in\//i, '')}
+                  value={data.linkedin_url.replace(/.*linkedin\.com\/in\//i, '').replace(/[/?#].*$/, '')}
                   onChange={e => {
-                    const slug = e.target.value.replace(/.*linkedin\.com\/in\//i, '')
+                    const raw  = e.target.value.replace(/.*linkedin\.com\/in\//i, '')
+                    const slug = raw.replace(/[/?#].*$/, '').replace(/\/$/, '').trim()
                     setData(d => ({
                       ...d,
                       linkedin_url: slug ? `https://linkedin.com/in/${slug}` : '',

@@ -485,7 +485,7 @@ function StepBlurredResults({ result, onUnlock, unlocking, unlockError }: Step4P
 
           <button
             onClick={() => email && onUnlock(email)}
-            disabled={unlocking || !email}
+            disabled={unlocking || !email || !email.includes('@') || !email.includes('.')}
             className="w-full py-3.5 rounded-xl bg-[#1D9E75] hover:bg-[#178a63] text-white font-semibold
                        transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -576,8 +576,9 @@ export default function AuditPage() {
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Something went wrong'); return }
       if (data.exists) {
-        // Existing unlocked audit — skip to result view
+        // Existing unlocked audit — show full result immediately
         setAuditId(data.auditId)
+        if (data.result) setResult(data.result)
         setStep(5)
         return
       }

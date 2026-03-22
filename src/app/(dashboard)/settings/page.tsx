@@ -117,6 +117,9 @@ export default function SettingsPage() {
   const [deleteText,       setDeleteText]       = useState('')
   const [deletingAccount,  setDeletingAccount]  = useState(false)
 
+  // Billing
+  const [cancellingSubscription, setCancellingSubscription] = useState(false)
+
   // Notifications
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>({
     weekly_ideas:  true,
@@ -213,6 +216,7 @@ export default function SettingsPage() {
   // ── Cancel subscription ───────────────────────────────────────────────────
 
   async function handleCancelSubscription() {
+    setCancellingSubscription(true)
     try {
       const res  = await fetch('/api/billing/cancel-subscription', { method: 'POST' })
       const data = await res.json() as { success?: boolean; message?: string; error?: string }
@@ -221,6 +225,8 @@ export default function SettingsPage() {
       setSubscription(prev => prev ? { ...prev, status: 'cancelled' } : prev)
     } catch (err) {
       pushToast(err instanceof Error ? err.message : 'Failed to cancel', 'error')
+    } finally {
+      setCancellingSubscription(false)
     }
   }
 
@@ -491,10 +497,15 @@ export default function SettingsPage() {
                   {subscription?.status === 'active' && (
                     <button
                       onClick={handleCancelSubscription}
+                      disabled={cancellingSubscription}
                       className="text-sm text-red-500 hover:text-red-700 border border-red-200
-                                 rounded-lg px-3 py-1.5 transition-colors whitespace-nowrap"
+                                 rounded-lg px-3 py-1.5 transition-colors whitespace-nowrap
+                                 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
                     >
-                      Cancel plan
+                      {cancellingSubscription && (
+                        <span className="w-3.5 h-3.5 border-2 border-red-300 border-t-red-500 rounded-full animate-spin" />
+                      )}
+                      {cancellingSubscription ? 'Cancelling…' : 'Cancel plan'}
                     </button>
                   )}
                 </div>

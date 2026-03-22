@@ -44,13 +44,16 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       title:      string
       topic?:     string
       hook?:      string
       pillar_id?: string
       format?:    string
       source?:    'manual' | 'idea_lab' | 'hook_generator' | 'ai_suggestion'
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     if (!body.title) {

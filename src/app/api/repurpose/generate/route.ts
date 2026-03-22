@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateRepurposedPosts } from '@/lib/repurposeGenerator'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import { REPURPOSE_LIMITS } from '@/lib/repurposeConfig'
 import type { PlanType, RepurposeAngle, RepurposeSettings } from '@/types'
 
@@ -14,10 +15,13 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       session_id: string
       angles:     RepurposeAngle[]
       settings:   RepurposeSettings
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     const { session_id, angles, settings } = body
@@ -37,7 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
 
-    if (session.status !== 'extracted') {
+    if (!['extracted', 'complete'].includes(session.status)) {
       return NextResponse.json({ error: 'Session is not in extracted state' }, { status: 400 })
     }
 
@@ -94,15 +98,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ posts, session_id })
   } catch (err) {
-    // Mark session as failed
-    try {
-      const supabase2 = await createClient()
-      const body2 = await (err as { sessionId?: string }).sessionId
-      if (body2) {
-        await supabase2.from('repurpose_sessions').update({ status: 'failed' }).eq('id', body2)
-      }
-    } catch { /* ignore */ }
-
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/repurpose/generate]', err)
     return NextResponse.json({ error: 'Failed to generate posts' }, { status: 500 })
   }

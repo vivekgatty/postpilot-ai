@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, AI_MODEL } from '@/lib/anthropic'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import { SYSTEM_TONES } from '@/lib/constants'
 import type { RepurposeAngle, RepurposeSettings, RepurposedPost, CarouselSlide } from '@/types'
 
@@ -22,11 +23,14 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       session_id:       string
       angle:            RepurposeAngle
       settings:         RepurposeSettings
       previous_content: string
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     const { session_id, angle, settings, previous_content } = body
@@ -101,6 +105,8 @@ Return ONLY valid JSON:
 
     return NextResponse.json({ post })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/repurpose/regenerate-post]', err)
     return NextResponse.json({ error: 'Failed to regenerate post' }, { status: 500 })
   }

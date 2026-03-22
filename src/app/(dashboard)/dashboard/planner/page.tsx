@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { cn } from '@/lib/utils'
 import PlannerSetupWizard from '@/components/features/PlannerSetupWizard'
 import PlannerCalendar    from '@/components/features/PlannerCalendar'
@@ -205,7 +206,7 @@ export default function PlannerPage() {
   }
 
   // ── Drop from content bank ────────────────────────────────────────────────────
-  const handleDropFromBank = async (item: ContentBankItem, date: Date) => {
+  const handleDropFromBank = useCallback(async (item: ContentBankItem, date: Date) => {
     const planned_date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
     const res = await fetch('/api/planner/posts', {
       method:  'POST',
@@ -231,7 +232,7 @@ export default function PlannerPage() {
       })
       setBankItems((prev) => prev.filter((b) => b.id !== item.id))
     }
-  }
+  }, [settings])
 
   // ── Publish now ───────────────────────────────────────────────────────────────
   const handlePublishNow = async (post: PlannedPost) => {
@@ -310,6 +311,19 @@ export default function PlannerPage() {
     showToast('Saved to content bank')
   }
 
+  // ── Calendar drag-and-drop (bank → calendar) ──────────────────────────────────
+  const handleCalendarDragEnd = useCallback((result: DropResult) => {
+    if (!result.destination) return
+    const droppableId = result.destination.droppableId
+    if (!droppableId.startsWith('day-')) return
+    const dateStr = droppableId.replace('day-', '')
+    const date    = new Date(dateStr + 'T00:00:00')
+    if (result.draggableId.startsWith('bank-')) {
+      const item = (window as Window & { __dragBankItem?: import('@/types').ContentBankItem }).__dragBankItem
+      if (item) handleDropFromBank(item, date)
+    }
+  }, [handleDropFromBank])
+
   // ── Settings saved ────────────────────────────────────────────────────────────
   const handleSettingsSaved = (newSettings: PlannerSettings, newPillars: ContentPillar[]) => {
     setSettings(newSettings)
@@ -325,6 +339,7 @@ export default function PlannerPage() {
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
+    <DragDropContext onDragEnd={handleCalendarDragEnd}>
     <div className="flex h-full min-h-screen bg-[#F7F6F3]">
 
       {/* Setup wizard overlay */}
@@ -445,7 +460,6 @@ export default function PlannerPage() {
               onMonthChange={setCurrentMonth}
               onPostClick={setSelectedPost}
               onDayClick={handleDayClick}
-              onDropFromBank={handleDropFromBank}
             />
           ) : (
             <div className="bg-white rounded-2xl border border-[#E5E4E0] h-96 flex items-center justify-center">
@@ -524,5 +538,6 @@ export default function PlannerPage() {
       )}
 
     </div>
+    </DragDropContext>
   )
 }

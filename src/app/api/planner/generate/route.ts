@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import type { PlanType, ContentPillar, PlannerSettings } from '@/types'
 
 // Plans allowed to generate for future months
@@ -52,10 +53,13 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       month:          string  // YYYY-MM
       regenerateAll?: boolean
       pillarIds?:     string[]
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     const { month, regenerateAll = false } = body
@@ -274,6 +278,8 @@ Return ONLY valid JSON:
 
     return NextResponse.json({ posts: saved ?? [], count: (saved ?? []).length })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/planner/generate]', err)
     return NextResponse.json({ error: 'Failed to generate plan' }, { status: 500 })
   }

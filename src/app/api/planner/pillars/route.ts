@@ -43,13 +43,16 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       name: string
       description: string
       color: string
       weight: 'high' | 'medium' | 'low'
       tone_id: string
       position: number
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     if (!body.name || body.name.length > 50) {
@@ -112,7 +115,10 @@ export async function PUT(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { pillarIds } = await req.json() as { pillarIds: string[] }
+    let pillarIds: string[]
+    try { ({ pillarIds } = await req.json() as { pillarIds: string[] }) } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     if (!Array.isArray(pillarIds)) {
       return NextResponse.json({ error: 'pillarIds must be an array' }, { status: 400 })
     }

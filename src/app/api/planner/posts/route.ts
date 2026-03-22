@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       pillar_id?:     string
       title:          string
       topic:          string
@@ -58,6 +58,9 @@ export async function POST(req: NextRequest) {
       tone_id?:       string
       hook_suggestion?: string
       why_this_week?:   string
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     if (!body.title || !body.planned_date) {

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateLinkedInPosts } from '@/lib/anthropic'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import { PLAN_LIMITS, SYSTEM_TONES, SYSTEM_FORMATS } from '@/lib/constants'
 import type { NicheType } from '@/types'
 
@@ -137,6 +138,8 @@ export async function POST(req: NextRequest) {
     })
 
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/generate]', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }
