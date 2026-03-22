@@ -198,6 +198,28 @@ export async function POST(request: Request) {
         }
       }
 
+      else if (event === 'subscription.completed') {
+        // All billing cycles finished — downgrade profile to free
+        const { data: row } = await supabase
+          .from('subscriptions')
+          .select('user_id')
+          .eq('razorpay_subscription_id', rzpSubId)
+          .maybeSingle() as { data: { user_id: string } | null }
+
+        if (row) {
+          await Promise.all([
+            supabase
+              .from('subscriptions')
+              .update({ status: 'completed', updated_at: new Date().toISOString() })
+              .eq('razorpay_subscription_id', rzpSubId),
+            supabase
+              .from('profiles')
+              .update({ plan: 'free', updated_at: new Date().toISOString() })
+              .eq('id', row.user_id),
+          ])
+        }
+      }
+
       else if (event === 'subscription.paused') {
         await supabase
           .from('subscriptions')

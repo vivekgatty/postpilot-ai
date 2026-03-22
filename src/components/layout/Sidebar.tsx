@@ -100,7 +100,11 @@ export default function Sidebar({ profile }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+          // Use exact match for the /dashboard home item to avoid it lighting up
+          // on every /dashboard/* sub-page (audit, planner, repurpose, etc.).
+          const isActive =
+            pathname === item.href ||
+            (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`))
           const Icon     = ICONS[item.icon]
           const isLocked = item.proOnly && isFree
 
@@ -129,13 +133,13 @@ export default function Sidebar({ profile }: SidebarProps) {
 
               <span className="flex-1 leading-none">{item.label}</span>
 
-              {(item.href === '/hooks' || item.href === '/dashboard/planner' || item.href === '/dashboard/repurpose' || item.href === '/dashboard/carousel' || item.href === '/dashboard/profile-optimizer' || item.href === '/dashboard/analyse') && !isActive && (
+              {(item.href === '/hooks' || item.href === '/dashboard/planner' || item.href === '/dashboard/repurpose' || item.href === '/carousel' || item.href === '/profile-optimizer' || item.href === '/analyse') && !isActive && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#1D9E75]/10 text-[#1D9E75]">
                   NEW
                 </span>
               )}
 
-              {item.href === '/dashboard/streak' && !isActive && streakCount !== null && (
+              {item.href === '/streak' && !isActive && streakCount !== null && (
                 streakCount === 0 ? (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">
                     Start
