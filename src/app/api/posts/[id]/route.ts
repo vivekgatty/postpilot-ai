@@ -124,12 +124,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const raw = await req.json() as {
+    let raw: {
       content?:       string
       status?:        string
       scheduled_for?: string | null
       is_favourite?:  boolean
       title?:         string
+    }
+    try { raw = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     // ── Whitelist the fields we accept ───────────────────────────────────────

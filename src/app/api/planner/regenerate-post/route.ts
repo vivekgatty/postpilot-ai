@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import type { ContentPillar } from '@/types'
 
 function extractJSON(text: string): unknown {
@@ -19,7 +20,11 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { postId } = await req.json() as { postId: string; keepDate?: boolean }
+    let body: { postId: string; keepDate?: boolean }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    const { postId } = body
 
     // Fetch the post
     const { data: post, error: postErr } = await supabase
@@ -88,6 +93,8 @@ Generate something DIFFERENT and more specific. Return ONLY valid JSON:
 
     return NextResponse.json({ post: updated })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/planner/regenerate-post]', err)
     return NextResponse.json({ error: 'Failed to regenerate post' }, { status: 500 })
   }

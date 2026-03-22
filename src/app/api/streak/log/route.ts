@@ -17,11 +17,14 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json()
+    let body: Record<string, unknown>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { log_type, source, post_id, comment_urls, notes, date } = body
 
     // Validate log_type
-    if (!VALID_LOG_TYPES.includes(log_type)) {
+    if (!VALID_LOG_TYPES.includes(log_type as typeof VALID_LOG_TYPES[number])) {
       return NextResponse.json({ error: 'Invalid log_type' }, { status: 400 })
     }
 

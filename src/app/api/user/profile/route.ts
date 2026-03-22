@@ -37,7 +37,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json() as Partial<Profile>
+    let body: Partial<Profile>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
 
     // Whitelist only user-editable fields.
     // NEVER allow: plan, generations_*, razorpay_*, email, id, created_at

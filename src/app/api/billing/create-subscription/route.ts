@@ -15,7 +15,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Validate planId
-    const { planId } = await req.json() as { planId?: string }
+    let planId: string | undefined
+    try { ({ planId } = await req.json() as { planId?: string }) } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     if (!planId || !VALID_PLAN_IDS.has(planId)) {
       return NextResponse.json(
         { error: 'Invalid plan. Provide a valid planId.' },

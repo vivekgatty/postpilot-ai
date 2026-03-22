@@ -11,10 +11,13 @@ function extractLinkedInUsername(url: string): string | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as {
+    let body: {
       linkedin_url?: string
       full_name?: string
       profile_photo_url?: string
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     const { linkedin_url, full_name, profile_photo_url } = body

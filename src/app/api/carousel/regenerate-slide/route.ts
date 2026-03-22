@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { regenerateSingleSlide } from '@/lib/carouselGenerator'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import type { CarouselSlide } from '@/types'
 
 // ── POST /api/carousel/regenerate-slide ───────────────────────────────────────
@@ -13,12 +14,15 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       carousel_id: string
       slide_id:    string
       topic:       string
       niche:       string
       tone_id:     string
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     const { carousel_id, slide_id, topic, niche, tone_id } = body
@@ -78,6 +82,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ slide: updatedSlide })
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/carousel/regenerate-slide]', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Failed to regenerate slide' }, { status: 500 })
   }

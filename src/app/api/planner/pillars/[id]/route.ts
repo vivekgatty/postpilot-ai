@@ -14,12 +14,15 @@ export async function PATCH(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       name?:        string
       description?: string
       color?:       string
       weight?:      'high' | 'medium' | 'low'
       tone_id?:     string
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     if (body.name !== undefined && body.name.length > 50) {

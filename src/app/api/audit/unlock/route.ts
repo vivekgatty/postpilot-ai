@@ -10,7 +10,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { auditId?: string; email?: string }
+    let body: { auditId?: string; email?: string }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { auditId, email } = body
 
     if (!auditId) {

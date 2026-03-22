@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runDeterministicChecks, mergeScores } from '@/lib/postScoring'
 import { runAiAnalysis } from '@/lib/postAnalyser'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import { getGradeFromScore, ANALYSER_LIMITS } from '@/lib/analyserConfig'
 
 // ── POST /api/analyse/run ─────────────────────────────────────────────────────
@@ -122,6 +123,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(saved)
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/analyse/run]', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }

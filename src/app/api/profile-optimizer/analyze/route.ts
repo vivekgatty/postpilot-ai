@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { scoreProfile, calculateTotalScore } from '@/lib/profileScoring'
 import { generateRecommendations, generateCompetitiveAnalysis } from '@/lib/profileAnalyzer'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import { OPTIMIZER_LIMITS, getTierFromScore } from '@/lib/profileOptimizerConfig'
 import type { ProfileInputData } from '@/types'
 
@@ -168,6 +169,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(saved)
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/profile-optimizer/analyze]', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }

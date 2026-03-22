@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateHooks } from '@/lib/anthropic'
+import { handleAnthropicError } from '@/lib/handleAnthropicError'
 import { PLAN_LIMITS, HOOK_STYLES } from '@/lib/constants'
 
 const VALID_NICHES = new Set([
@@ -120,6 +121,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ hooks })
 
   } catch (err) {
+    const anthropicRes = handleAnthropicError(err)
+    if (anthropicRes) return anthropicRes
     console.error('[POST /api/generate/hooks]', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }

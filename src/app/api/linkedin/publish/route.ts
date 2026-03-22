@@ -13,11 +13,14 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json() as {
+    let body: {
       plannedPostId?: string
       postId?:        string
       content:        string
       scheduledFor?:  string  // ISO datetime — if provided, queue instead of post now
+    }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
     const { plannedPostId, postId, content, scheduledFor } = body
