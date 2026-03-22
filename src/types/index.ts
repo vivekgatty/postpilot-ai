@@ -535,6 +535,207 @@ export interface RepurposedPost {
   post_id?: string
 }
 
+// ─── Profile Optimizer ────────────────────────────────────────────────────────
+
+export interface ProfileRecommendation {
+  id: string
+  dimension_id: string
+  title: string
+  type: 'rewrite' | 'keyword' | 'structural' | 'seo' | 'action'
+  priority: 'high' | 'medium' | 'low'
+  current_state: string
+  why_weak: string
+  recommended_action: string
+  rewritten_content?: string
+  alternatives?: string[]
+  seo_impact: string
+  projected_views_increase: string
+  projected_reach_increase: string
+  projected_messages_increase: string
+  estimated_points: number
+  is_done: boolean
+  linkedin_where_to_apply: string
+}
+
+export interface ProfileAuditDimension {
+  id: string
+  label: string
+  score: number
+  max_score: number
+  percentage: number
+  tier: 'weak' | 'average' | 'strong' | 'excellent'
+  summary: string
+  recommendations: ProfileRecommendation[]
+}
+
+export interface PreviousRole {
+  title: string
+  company: string
+  description: string
+}
+
+export interface ProfileInputData {
+  full_name: string
+  current_title: string
+  current_company: string
+  location: string
+  headline: string
+  about: string
+  current_role_description: string
+  previous_roles: PreviousRole[]
+  skills: string[]
+  featured_section: string
+  education: string
+  has_profile_photo: boolean
+  has_custom_banner: boolean
+  banner_description: string
+  photo_is_headshot: boolean
+  photo_background_clean: boolean
+  photo_is_recent: boolean
+  photo_is_professional: boolean
+  posts_per_week: string
+  has_recent_post_with_engagement: boolean
+  comments_per_week: string
+  connections_count: string
+  has_custom_url: boolean
+  has_featured_items: boolean
+  featured_items_count: number
+  has_recommendations: boolean
+  recommendations_count: number
+  skills_with_endorsements: number
+  has_articles: boolean
+}
+
+export interface KeywordRecommendation {
+  keyword: string
+  estimated_monthly_searches: string
+  placement: string[]
+  example_usage: string
+  current_in_profile: boolean
+}
+
+export interface RewrittenExperience {
+  role_index: number
+  title: string
+  company: string
+  original: string
+  rewritten: string
+}
+
+export interface CompetitiveAnalysis {
+  niche: string
+  top_performer_headline: string
+  top_performer_about_length: string
+  top_performer_skills_count: string
+  top_performer_posts_per_week: string
+  gaps: string[]
+  advantages: string[]
+}
+
+export interface ProfileAuditData {
+  id?: string
+  user_id?: string
+  goal: string
+  target_audience: string
+  target_keywords: string[]
+  profile_data: ProfileInputData
+  dimension_scores: Record<string, ProfileAuditDimension>
+  total_score: number
+  tier: string
+  recommendations: ProfileRecommendation[]
+  keyword_recommendations: KeywordRecommendation[]
+  competitive_analysis?: CompetitiveAnalysis
+  rewritten_headline: string[]
+  rewritten_about: string
+  rewritten_experiences: RewrittenExperience[]
+  completed_recommendations: string[]
+  projected_score: number
+  status: string
+  version: number
+  created_at?: string
+}
+
+export interface ProfileScoreHistory {
+  id: string
+  audit_id: string
+  total_score: number
+  dimension_scores: Record<string, number>
+  completed_count: number
+  scored_at: string
+}
+
+// ─── Post Analyser ────────────────────────────────────────────────────────────
+
+export interface AnalysisDimension {
+  id: string
+  label: string
+  score: number
+  max_score: number
+  percentage: number
+  grade: 'excellent' | 'strong' | 'average' | 'weak' | 'poor'
+  feedback: string
+  has_suggestions: boolean
+}
+
+export interface AnalysisSuggestion {
+  id: string
+  dimension_id: string
+  type: 'hook_rewrite' | 'format_fix' | 'cta_rewrite' |
+    'authenticity_flag' | 'value_improvement' |
+    'specificity_fix' | 'general'
+  title: string
+  problem: string
+  suggestion: string
+  rewritten_content?: string
+  alternatives?: string[]
+  estimated_points_gain: number
+  is_applied: boolean
+}
+
+export interface TimingRecommendation {
+  best_day: string
+  best_time: string
+  reason: string
+  post_type_note: string
+}
+
+export interface PostAnalysis {
+  id?: string
+  post_content: string
+  post_type: 'text' | 'carousel' | 'poll' | 'question'
+  niche: string
+  overall_score: number
+  grade: string
+  dimension_scores: Record<string, AnalysisDimension>
+  suggestions: AnalysisSuggestion[]
+  hook_alternatives: string[]
+  cta_alternatives: string[]
+  timing_recommendation: TimingRecommendation
+  improved_content?: string
+  improved_score?: number
+  actual_reactions?: number
+  actual_comments?: number
+  actual_impressions?: number
+  version: number
+  source: 'standalone' | 'generate_page' | 'my_posts' | 'bulk'
+  created_at?: string
+}
+
+export interface BulkAnalysisPost {
+  content: string
+  score: number
+  grade: string
+  hook_score: number
+  summary: string
+}
+
+export interface BulkAnalysisSession {
+  id?: string
+  posts: BulkAnalysisPost[]
+  winner_index: number
+  created_at?: string
+}
+
 // ─── Personal Brand Audit ──────────────────────────────────────────────────────
 
 export interface AuditAnswer {

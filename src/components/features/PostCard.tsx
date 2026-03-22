@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Copy, Check, CalendarPlus, Loader2, BookmarkPlus } from 'lucide-react'
+import { Copy, Check, CalendarPlus, Loader2, BookmarkPlus, BarChart2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { GeneratedPost, ToneType } from '@/types'
 
@@ -81,6 +81,14 @@ export default function PostCard({
   const handleSchedule = () => {
     const encoded = encodeURIComponent(post.content)
     router.push(`/calendar?post=${encoded}`)
+  }
+
+  const handleAnalyse = () => {
+    const params = new URLSearchParams({
+      content: encodeURIComponent(post.content),
+      post_type: 'text',
+    })
+    router.push('/dashboard/analyse?' + params.toString())
   }
 
   return (
@@ -167,6 +175,16 @@ export default function PostCard({
             ) : (
               <><BookmarkPlus className="w-3.5 h-3.5" /> Save Draft</>
             )}
+          </button>
+
+          {/* Analyse */}
+          <button
+            type="button"
+            onClick={handleAnalyse}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#E5E4E0] text-gray-600 hover:border-[#1D9E75]/50 hover:text-[#0A2540] bg-white transition-all duration-150 focus:outline-none"
+          >
+            <BarChart2 className="w-3.5 h-3.5" />
+            Analyse
           </button>
 
           {/* Schedule */}

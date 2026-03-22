@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useToast } from '@/components/ui/Toast'
 import {
@@ -14,6 +15,7 @@ import {
   Trash2,
   Pencil,
   ChevronRight,
+  BarChart2,
 } from 'lucide-react'
 import { usePosts } from '@/hooks/usePosts'
 import PostEditor from '@/components/features/PostEditor'
@@ -138,6 +140,7 @@ function PostListCard({
   onFavourite,
   onDeleteAsk,
 }: PostCardProps) {
+  const router  = useRouter()
   const preview = post.content.slice(0, 120) + (post.content.length > 120 ? '…' : '')
 
   return (
@@ -228,6 +231,18 @@ function PostListCard({
             icon={<Star className={cn('w-3.5 h-3.5', post.is_favourite && 'fill-amber-400 text-amber-400')} />}
             label={post.is_favourite ? 'Unfavourite' : 'Favourite'}
             active={post.is_favourite}
+          />
+          <ActionBtn
+            onClick={() => {
+              const params = new URLSearchParams({
+                content: encodeURIComponent(post.content || ''),
+                post_type: 'text',
+                post_id: post.id,
+              })
+              router.push('/dashboard/analyse?' + params.toString())
+            }}
+            icon={<BarChart2 className="w-3.5 h-3.5" />}
+            label="Analyse"
           />
           <ActionBtn
             onClick={() => onDeleteAsk(post.id)}
