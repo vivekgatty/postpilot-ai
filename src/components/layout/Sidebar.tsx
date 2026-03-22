@@ -14,6 +14,7 @@ import {
   Anchor,
   Target,
   Layout,
+  RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/constants'
@@ -34,6 +35,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Anchor,
   Target,
   Layout,
+  RefreshCw,
 }
 
 // ── Plan badge ────────────────────────────────────────────────────────────────
@@ -113,7 +115,7 @@ export default function Sidebar({ profile }: SidebarProps) {
 
               <span className="flex-1 leading-none">{item.label}</span>
 
-              {(item.href === '/hooks' || item.href === '/dashboard/planner') && !isActive && (
+              {(item.href === '/hooks' || item.href === '/dashboard/planner' || item.href === '/dashboard/repurpose') && !isActive && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#1D9E75]/10 text-[#1D9E75]">
                   NEW
                 </span>

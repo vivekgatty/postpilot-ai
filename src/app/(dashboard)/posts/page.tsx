@@ -51,7 +51,7 @@ const TONE_PILL: Record<ToneType, string> = {
   inspirational: 'bg-rose-100     text-rose-600',
 }
 
-type TabKey = 'all' | 'drafts' | 'scheduled' | 'published' | 'favourites'
+type TabKey = 'all' | 'drafts' | 'scheduled' | 'published' | 'favourites' | 'repurposed'
 type SortKey = 'newest' | 'oldest' | 'az'
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -164,12 +164,29 @@ function PostListCard({
               {post.niche}
             </span>
           )}
+          {post.is_repurposed && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#1D9E75] text-white">
+              ↻ Repurposed
+            </span>
+          )}
           {post.is_favourite && (
             <span className="text-amber-400 text-sm leading-none">★</span>
           )}
         </div>
 
         {/* Content preview */}
+        {post.is_repurposed && post.source_title && (
+          <p className="text-[10px] text-gray-400 mb-1">
+            From:{' '}
+            {post.source_url ? (
+              <a href={post.source_url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                {post.source_title.slice(0, 35)}{post.source_title.length > 35 ? '…' : ''}
+              </a>
+            ) : (
+              <span>{post.source_title.slice(0, 35)}{post.source_title.length > 35 ? '…' : ''}</span>
+            )}
+          </p>
+        )}
         <p className="text-sm text-gray-700 leading-relaxed mb-3 whitespace-pre-wrap">
           {preview}
         </p>
@@ -308,6 +325,7 @@ export default function PostsPage() {
     else if (activeTab === 'scheduled')  result = result.filter(p => p.status === 'scheduled')
     else if (activeTab === 'published')  result = result.filter(p => p.status === 'published')
     else if (activeTab === 'favourites') result = result.filter(p => p.is_favourite)
+    else if (activeTab === 'repurposed') result = result.filter(p => p.is_repurposed)
 
     // Search
     if (searchQuery.trim()) {
@@ -376,11 +394,12 @@ export default function PostsPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   const TABS: { key: TabKey; label: string; count?: number }[] = [
-    { key: 'all',        label: 'All',       count: stats.total     },
-    { key: 'drafts',     label: 'Drafts',    count: stats.drafts    },
-    { key: 'scheduled',  label: 'Scheduled', count: stats.scheduled },
-    { key: 'published',  label: 'Published', count: stats.published },
-    { key: 'favourites', label: 'Favourites'                        },
+    { key: 'all',        label: 'All',        count: stats.total     },
+    { key: 'drafts',     label: 'Drafts',     count: stats.drafts    },
+    { key: 'scheduled',  label: 'Scheduled',  count: stats.scheduled },
+    { key: 'published',  label: 'Published',  count: stats.published },
+    { key: 'favourites', label: 'Favourites'                         },
+    { key: 'repurposed', label: 'Repurposed'                         },
   ]
 
   return (
