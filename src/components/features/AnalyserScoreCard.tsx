@@ -30,7 +30,7 @@ import {
 
 // ─── Lucide icon map ──────────────────────────────────────────────────────────
 
-const ICON_MAP: Record<string, React.ReactNode> = {
+const _ICON_MAP: Record<string, React.ReactNode> = {
   Zap:        <Zap        className="w-3.5 h-3.5" />,
   AlignLeft:  <AlignLeft  className="w-3.5 h-3.5" />,
   Lightbulb:  <Lightbulb  className="w-3.5 h-3.5" />,
