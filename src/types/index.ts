@@ -664,6 +664,78 @@ export interface ProfileScoreHistory {
   scored_at: string
 }
 
+// ─── Post Analyser ────────────────────────────────────────────────────────────
+
+export interface AnalysisDimension {
+  id: string
+  label: string
+  score: number
+  max_score: number
+  percentage: number
+  grade: 'excellent' | 'strong' | 'average' | 'weak' | 'poor'
+  feedback: string
+  has_suggestions: boolean
+}
+
+export interface AnalysisSuggestion {
+  id: string
+  dimension_id: string
+  type: 'hook_rewrite' | 'format_fix' | 'cta_rewrite' |
+    'authenticity_flag' | 'value_improvement' |
+    'specificity_fix' | 'general'
+  title: string
+  problem: string
+  suggestion: string
+  rewritten_content?: string
+  alternatives?: string[]
+  estimated_points_gain: number
+  is_applied: boolean
+}
+
+export interface TimingRecommendation {
+  best_day: string
+  best_time: string
+  reason: string
+  post_type_note: string
+}
+
+export interface PostAnalysis {
+  id?: string
+  post_content: string
+  post_type: 'text' | 'carousel' | 'poll' | 'question'
+  niche: string
+  overall_score: number
+  grade: string
+  dimension_scores: Record<string, AnalysisDimension>
+  suggestions: AnalysisSuggestion[]
+  hook_alternatives: string[]
+  cta_alternatives: string[]
+  timing_recommendation: TimingRecommendation
+  improved_content?: string
+  improved_score?: number
+  actual_reactions?: number
+  actual_comments?: number
+  actual_impressions?: number
+  version: number
+  source: 'standalone' | 'generate_page' | 'my_posts' | 'bulk'
+  created_at?: string
+}
+
+export interface BulkAnalysisPost {
+  content: string
+  score: number
+  grade: string
+  hook_score: number
+  summary: string
+}
+
+export interface BulkAnalysisSession {
+  id?: string
+  posts: BulkAnalysisPost[]
+  winner_index: number
+  created_at?: string
+}
+
 // ─── Personal Brand Audit ──────────────────────────────────────────────────────
 
 export interface AuditAnswer {
