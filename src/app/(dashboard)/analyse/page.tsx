@@ -78,6 +78,7 @@ export default function AnalysePage() {
   }, [profile?.niche])
 
   // ── URL params ─────────────────────────────────────────────────────────────
+  const postIdRef        = useRef<string | null>(null)
   const handleAnalyseRef = useRef<() => Promise<void>>(async () => {})
 
   const handleAnalyse = useCallback(async () => {
@@ -97,6 +98,7 @@ export default function AnalysePage() {
           post_type: postType,
           niche,
           source: 'standalone',
+          ...(postIdRef.current ? { post_id: postIdRef.current } : {}),
         }),
       })
       const data = await res.json()
@@ -122,9 +124,10 @@ export default function AnalysePage() {
   useEffect(() => { handleAnalyseRef.current = handleAnalyse }, [handleAnalyse])
 
   useEffect(() => {
-    const content  = searchParams.get('content')
-    const pType    = searchParams.get('post_type')
-    const auto     = searchParams.get('auto')
+    const content     = searchParams.get('content')
+    const pType       = searchParams.get('post_type')
+    const auto        = searchParams.get('auto')
+    const postIdParam = searchParams.get('post_id')
 
     if (content) {
       const decoded = decodeURIComponent(content)
@@ -133,6 +136,9 @@ export default function AnalysePage() {
     }
     if (pType) {
       setPostType(pType as 'text' | 'carousel' | 'poll' | 'question')
+    }
+    if (postIdParam) {
+      postIdRef.current = postIdParam
     }
     if (auto === 'true' && content) {
       handleAnalyseRef.current()
