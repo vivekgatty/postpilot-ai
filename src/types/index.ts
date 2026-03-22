@@ -73,6 +73,12 @@ export interface Post {
   character_count: number | null
   generation_index: number
   is_favourite: boolean
+  // repurpose columns (added via SQL migration)
+  repurpose_session_id: string | null
+  is_repurposed: boolean
+  repurpose_angle: string | null
+  source_url: string | null
+  source_title: string | null
   created_at: string
   updated_at: string
 }
@@ -383,6 +389,78 @@ export interface MonthStats {
   variety_score: number
   format_score: number
   consistency_score: number
+}
+
+// ─── Content Repurposer ───────────────────────────────────────────────────────
+
+export interface RepurposeSettings {
+  post_count: number
+  tone_id: string
+  include_carousel: boolean
+  include_poll: boolean
+  add_hashtags: boolean
+  add_attribution: boolean
+  selected_angles: string[]
+  niche: string
+}
+
+export interface RepurposeSession {
+  id: string
+  user_id: string
+  source_type: 'url' | 'text' | 'pdf' | 'youtube' | 'twitter' | 'newsletter' | 'google_docs'
+  source_url: string | null
+  source_title: string | null
+  source_author: string | null
+  source_platform: string | null
+  extracted_text: string | null
+  extracted_topics: string[]
+  word_count: number
+  settings: RepurposeSettings
+  posts_generated: number
+  posts_saved: number
+  status: 'extracting' | 'extracted' | 'generating' | 'complete' | 'failed'
+  error_message: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ExtractedContent {
+  title: string
+  author: string
+  text: string
+  platform: string
+  source_type: string
+  word_count: number
+  error?: string
+  needs_manual_paste?: boolean
+}
+
+export interface RepurposeAngle {
+  id: string
+  title: string
+  description: string
+  format: 'text' | 'carousel' | 'question' | 'poll'
+  emotional_hook: string
+}
+
+export interface CarouselSlide {
+  slide_number: number
+  type: 'title' | 'content' | 'cta'
+  heading: string
+  body: string
+}
+
+export interface RepurposedPost {
+  angle_id: string
+  angle_title: string
+  content: string
+  format: 'text' | 'carousel' | 'question' | 'poll'
+  carousel_slides?: CarouselSlide[]
+  poll_options?: string[]
+  character_count: number
+  tone_id: string
+  saved?: boolean
+  post_id?: string
 }
 
 // ─── Personal Brand Audit ──────────────────────────────────────────────────────
