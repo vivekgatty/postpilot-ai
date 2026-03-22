@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { PROFILE_GOALS, OPTIMIZER_LIMITS } from '@/lib/profileOptimizerConfig'
 import type { ProfileInputData } from '@/types'
 import { ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Check, Linkedin } from 'lucide-react'
+import Spinner from '@/components/ui/Spinner'
 
 // ─── Section labels ────────────────────────────────────────────────────────────
 
@@ -85,8 +86,8 @@ export default function ProfileInputForm({
   initialGoal     = '',
   initialAudience = '',
   initialKeywords = ['', '', '', '', ''],
-  onComplete: _onComplete,
-  isAnalyzing: _isAnalyzing,
+  onComplete,
+  isAnalyzing,
 }: Props) {
   const [activeSection,   setActiveSection]   = useState(0)
   const [goal,            setGoal]            = useState(initialGoal)
@@ -198,6 +199,51 @@ export default function ProfileInputForm({
         {nextLabel ?? 'Continue'}
         <ChevronRight className="w-4 h-4" />
       </button>
+    </div>
+  )
+
+  const YesNoToggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
+    <div className="flex gap-1 flex-shrink-0">
+      {[true, false].map((opt) => (
+        <button
+          key={String(opt)}
+          type="button"
+          onClick={() => onChange(opt)}
+          className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"
+          style={{
+            background: value === opt ? '#1D9E75' : 'transparent',
+            color:      value === opt ? '#FFFFFF' : '#6B7280',
+            border:     value === opt ? '1.5px solid #1D9E75' : '1.5px solid #E5E4E0',
+          }}
+        >
+          {opt ? 'Yes' : 'No'}
+        </button>
+      ))}
+    </div>
+  )
+
+  const RadioCards = ({
+    options, value, onChange,
+  }: { options: { label: string; value: string }[]; value: string; onChange: (v: string) => void }) => (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => {
+        const sel = value === opt.value
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
+            style={{
+              background: sel ? '#E1F5EE' : '#FFFFFF',
+              color:      sel ? '#0F6E56' : '#6B7280',
+              border:     sel ? '1.5px solid #1D9E75' : '1.5px solid #E5E4E0',
+            }}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
     </div>
   )
 
@@ -754,28 +800,372 @@ export default function ProfileInputForm({
         )}
 
         {activeSection === 7 && (
-          <div className="py-4 text-gray-400 text-sm">
-            Section 7 — built in next prompt
+          <div className="py-6 space-y-6">
+            <SectionHeader
+              number={7}
+              title="Social Proof"
+              whyItMatters="Featured items and recommendations are the two highest-trust signals on LinkedIn. Recruiters and clients look for these first."
+            />
+            <div className="space-y-5">
+
+              {/* Row 1 — Featured section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-gray-700">Do you have a Featured section on your LinkedIn profile?</span>
+                  <YesNoToggle
+                    value={formData.has_featured_items}
+                    onChange={(v) => updateFormField({ has_featured_items: v, featured_items_count: v ? formData.featured_items_count || 1 : 0 })}
+                  />
+                </div>
+                {formData.has_featured_items && (
+                  <div className="flex items-center gap-3 pl-2">
+                    <label className="text-xs text-gray-500 whitespace-nowrap">How many featured items?</label>
+                    <input
+                      type="number" min={1} max={20}
+                      value={formData.featured_items_count}
+                      onChange={(e) => updateFormField({ featured_items_count: Number(e.target.value) })}
+                      className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="h-px bg-gray-100" />
+
+              {/* Row 2 — Articles */}
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm text-gray-700">Have you published any LinkedIn articles or newsletters?</span>
+                <YesNoToggle
+                  value={formData.has_articles}
+                  onChange={(v) => updateFormField({ has_articles: v })}
+                />
+              </div>
+
+              <div className="h-px bg-gray-100" />
+
+              {/* Row 3 — Recommendations */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-gray-700">Do you have recommendations from others on your profile?</span>
+                  <YesNoToggle
+                    value={formData.has_recommendations}
+                    onChange={(v) => updateFormField({ has_recommendations: v, recommendations_count: v ? formData.recommendations_count || 1 : 0 })}
+                  />
+                </div>
+                {formData.has_recommendations && (
+                  <div className="flex items-center gap-3 pl-2">
+                    <label className="text-xs text-gray-500 whitespace-nowrap">How many recommendations?</label>
+                    <input
+                      type="number" min={1} max={100}
+                      value={formData.recommendations_count}
+                      onChange={(e) => updateFormField({ recommendations_count: Number(e.target.value) })}
+                      className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="h-px bg-gray-100" />
+
+              {/* Row 4 — Endorsements */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-gray-700">Do you have skills with 10 or more endorsements?</span>
+                  <YesNoToggle
+                    value={formData.skills_with_endorsements > 0}
+                    onChange={(v) => updateFormField({ skills_with_endorsements: v ? 1 : 0 })}
+                  />
+                </div>
+                {formData.skills_with_endorsements > 0 && (
+                  <div className="flex items-center gap-3 pl-2">
+                    <label className="text-xs text-gray-500 whitespace-nowrap">How many skills have 10+ endorsements?</label>
+                    <input
+                      type="number" min={1} max={50}
+                      value={formData.skills_with_endorsements}
+                      onChange={(e) => updateFormField({ skills_with_endorsements: Number(e.target.value) })}
+                      className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+            </div>
+            <NavButtons
+              onBack={() => setActiveSection(6)}
+              onNext={() => setActiveSection(8)}
+            />
           </div>
         )}
 
         {activeSection === 8 && (
-          <div className="py-4 text-gray-400 text-sm">
-            Section 8 — built in next prompt
+          <div className="py-6 space-y-7">
+            <SectionHeader
+              number={8}
+              title="Engagement and Activity"
+              whyItMatters="LinkedIn's algorithm gives higher search rankings and post reach to active users. Activity is a core profile authority signal."
+            />
+
+            {/* Q1 — Posting frequency */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">How often do you post on LinkedIn?</p>
+              <RadioCards
+                value={formData.posts_per_week}
+                onChange={(v) => updateFormField({ posts_per_week: v })}
+                options={[
+                  { label: 'Daily',              value: 'daily'   },
+                  { label: 'Several times a week', value: 'several' },
+                  { label: 'Once a week',         value: 'weekly'  },
+                  { label: 'Rarely or never',     value: 'rarely'  },
+                ]}
+              />
+            </div>
+
+            <div className="h-px bg-gray-100" />
+
+            {/* Q2 — Recent high-engagement post */}
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-gray-700">Do you have a post in the last 30 days with 20 or more reactions?</span>
+              <YesNoToggle
+                value={formData.has_recent_post_with_engagement}
+                onChange={(v) => updateFormField({ has_recent_post_with_engagement: v })}
+              />
+            </div>
+
+            <div className="h-px bg-gray-100" />
+
+            {/* Q3 — Commenting frequency */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">How often do you comment on others&rsquo; posts?</p>
+              <RadioCards
+                value={formData.comments_per_week}
+                onChange={(v) => updateFormField({ comments_per_week: v })}
+                options={[
+                  { label: 'Daily',              value: 'daily'   },
+                  { label: 'Several times a week', value: 'several' },
+                  { label: 'Once a week',         value: 'weekly'  },
+                  { label: 'Rarely',              value: 'rarely'  },
+                ]}
+              />
+            </div>
+
+            <div className="h-px bg-gray-100" />
+
+            {/* Q4 — Connections count */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">How many LinkedIn connections do you have?</p>
+              <RadioCards
+                value={formData.connections_count}
+                onChange={(v) => updateFormField({ connections_count: v })}
+                options={[
+                  { label: 'Under 100',   value: 'under100'  },
+                  { label: '100 to 499',  value: '100to499'  },
+                  { label: '500 or more', value: '500plus'   },
+                ]}
+              />
+            </div>
+
+            <div className="h-px bg-gray-100" />
+
+            {/* Q5 — Custom URL */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm text-gray-700">Do you have a custom LinkedIn profile URL?</span>
+                <YesNoToggle
+                  value={formData.has_custom_url}
+                  onChange={(v) => updateFormField({ has_custom_url: v })}
+                />
+              </div>
+              <p className="text-xs text-gray-400">
+                Custom URL looks like: linkedin.com/in/yourname (not random numbers)
+              </p>
+            </div>
+
+            <NavButtons
+              onBack={() => setActiveSection(7)}
+              onNext={() => setActiveSection(9)}
+            />
           </div>
         )}
 
         {activeSection === 9 && (
-          <div className="py-4 text-gray-400 text-sm">
-            Section 9 — built in next prompt
+          <div className="py-6 space-y-6">
+            <SectionHeader
+              number={9}
+              title="Photo and Visual Branding"
+              whyItMatters="Profiles with professional photos get 21x more views. Your banner is the largest visual element on your profile."
+            />
+
+            {/* Photo checkboxes */}
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-gray-800">Profile photo self-assessment</p>
+              {([
+                { field: 'photo_is_headshot',      label: 'My profile photo is a clear headshot (my face fills at least 60% of the frame)' },
+                { field: 'photo_background_clean', label: 'The background in my photo is simple (solid colour, blurred, or plain wall)' },
+                { field: 'photo_is_recent',        label: 'My photo looks recent (taken within the last 3 years)' },
+                { field: 'photo_is_professional',  label: 'My photo looks professional (business casual attire or above)' },
+              ] as { field: keyof ProfileInputData; label: string }[]).map(({ field, label }) => (
+                <label key={field} className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={formData[field] as boolean}
+                    onChange={(e) => updateFormField({ [field]: e.target.checked })}
+                    className="mt-0.5 w-4 h-4 rounded accent-teal-600 flex-shrink-0 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900">{label}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="h-px bg-gray-200" />
+
+            {/* Banner */}
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-gray-800">Banner image</p>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-gray-700">Do you have a custom banner image?</span>
+                  <YesNoToggle
+                    value={formData.has_custom_banner}
+                    onChange={(v) => updateFormField({ has_custom_banner: v })}
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  LinkedIn&rsquo;s default is a blue-grey gradient. A custom banner shows you&rsquo;ve invested in your brand.
+                </p>
+              </div>
+              {formData.has_custom_banner && (
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-gray-600">
+                    Briefly describe what your banner shows
+                  </label>
+                  <textarea
+                    value={formData.banner_description}
+                    onChange={(e) => updateFormField({ banner_description: e.target.value })}
+                    rows={3}
+                    maxLength={200}
+                    placeholder="E.g. A photo of me speaking at a conference with my name and tagline overlaid"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                  />
+                  <p className="text-xs text-gray-400 text-right">{formData.banner_description.length} / 200</p>
+                </div>
+              )}
+            </div>
+
+            <NavButtons
+              onBack={() => setActiveSection(8)}
+              onNext={() => setActiveSection(10)}
+              nextLabel="Review and analyse →"
+            />
           </div>
         )}
 
-        {activeSection === 10 && (
-          <div className="py-4 text-gray-400 text-sm">
-            Final CTA — built in next prompt
-          </div>
-        )}
+        {activeSection === 10 && (() => {
+          const headlineLen  = formData.headline.length
+          const aboutLen     = formData.about.length
+          const skillsCount  = formData.skills.length
+          const expFilled    =
+            (formData.current_role_description.length > 10 ? 1 : 0) +
+            formData.previous_roles.filter((r) => r.description.length > 10).length
+
+          const summaryCards = [
+            {
+              label: 'Headline',
+              value: `${headlineLen} chars`,
+              color: headlineLen >= 100 ? '#1D9E75' : headlineLen >= 60 ? '#BA7517' : '#E24B4A',
+            },
+            {
+              label: 'About section',
+              value: `${aboutLen} chars`,
+              color: aboutLen >= 1500 ? '#1D9E75' : aboutLen >= 500 ? '#BA7517' : '#E24B4A',
+            },
+            {
+              label: 'Skills',
+              value: `${skillsCount} skills`,
+              color: skillsCount >= 15 ? '#1D9E75' : skillsCount >= 10 ? '#BA7517' : '#E24B4A',
+            },
+            {
+              label: 'Experience sections',
+              value: `${expFilled} filled`,
+              color: expFilled >= 3 ? '#1D9E75' : expFilled >= 1 ? '#BA7517' : '#E24B4A',
+            },
+          ]
+
+          const hasWeak = headlineLen < 60 || aboutLen < 500 || skillsCount < 10 || expFilled === 0
+
+          return (
+            <div className="py-6 space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Your profile data is complete</h2>
+                <p className="mt-1 text-sm text-gray-500">Here is a summary of what you entered:</p>
+              </div>
+
+              {/* Summary grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {summaryCards.map((card) => (
+                  <div
+                    key={card.label}
+                    className="rounded-xl border border-gray-100 px-4 py-3 space-y-1"
+                    style={{ background: '#FAFAF9' }}
+                  >
+                    <p className="text-xs text-gray-500">{card.label}</p>
+                    <p className="text-base font-bold" style={{ color: card.color }}>{card.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Weak-section tip */}
+              {hasWeak && (
+                <div
+                  className="flex gap-2 px-4 py-3 rounded-lg text-sm"
+                  style={{ background: '#FFFBEB', borderLeft: '3px solid #BA7517' }}
+                >
+                  <span className="text-base flex-shrink-0">💡</span>
+                  <p className="text-xs text-amber-800">
+                    Your audit will still run with missing sections — PostPika will flag gaps as recommendations.
+                  </p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex flex-col gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveSection(0)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 font-medium hover:bg-gray-50 transition-colors self-start"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Edit my answers
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isAnalyzing}
+                  onClick={() => onComplete(formData, goal, targetAudience, targetKeywords)}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-base font-bold transition-all"
+                  style={{
+                    background: isAnalyzing ? '#E5E4E0' : '#1D9E75',
+                    color:      isAnalyzing ? '#9CA3AF' : '#FFFFFF',
+                    cursor:     isAnalyzing ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Spinner />
+                      Analysing your profile...
+                    </>
+                  ) : (
+                    <>
+                      Analyse my LinkedIn profile
+                      <ChevronRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+
+                <p className="text-xs text-gray-400 text-center">This usually takes 20–30 seconds</p>
+              </div>
+            </div>
+          )
+        })()}
 
       </div>
     </div>
