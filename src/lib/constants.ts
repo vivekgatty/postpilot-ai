@@ -141,6 +141,7 @@ export const NAV_ITEMS = [
   { href: '/calendar',          label: 'Calendar',         icon: 'Calendar',       proOnly: false },
   { href: '/dashboard/planner', label: 'Content Planner', icon: 'Layout',         proOnly: false },
   { href: '/ideas',             label: 'Idea Lab',         icon: 'Lightbulb',      proOnly: false },
+  { href: '/dashboard/streak',  label: 'Streak',           icon: 'Flame',          proOnly: false },
   { href: '/dashboard/audit',             label: 'Brand Audit',        icon: 'Target',          proOnly: false },
   { href: '/dashboard/profile-optimizer', label: 'Profile Optimizer',  icon: 'Target',          proOnly: false },
   { href: '/analytics',                   label: 'Analytics',          icon: 'BarChart2',        proOnly: true  },
