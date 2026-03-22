@@ -485,7 +485,7 @@ function StepBlurredResults({ result, onUnlock, unlocking, unlockError }: Step4P
 
           <button
             onClick={() => email && onUnlock(email)}
-            disabled={unlocking || !email}
+            disabled={unlocking || !email || !email.includes('@') || !email.includes('.')}
             className="w-full py-3.5 rounded-xl bg-[#1D9E75] hover:bg-[#178a63] text-white font-semibold
                        transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >

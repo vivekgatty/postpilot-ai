@@ -93,7 +93,10 @@ function EngageSection({ postedToday, locked, isLogging, onLog }: EngageSectionP
     if (urls.length > 1) setUrls(prev => prev.filter((_, idx) => idx !== i))
   }
 
-  const hasValid = urls.some(u => u.trim().length > 0)
+  function isValidUrl(u: string) {
+    try { return Boolean(new URL(u.trim())) } catch { return false }
+  }
+  const hasValid = urls.some(u => isValidUrl(u))
 
   return (
     <div className="relative">
@@ -129,7 +132,9 @@ function EngageSection({ postedToday, locked, isLogging, onLog }: EngageSectionP
                     value={url}
                     onChange={e => setUrl(i, e.target.value)}
                     placeholder="https://linkedin.com/feed/update/..."
-                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75] transition"
+                    className={`flex-1 text-[13px] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75] transition ${
+                      url.trim() && !isValidUrl(url) ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                    }`}
                   />
                   <button
                     onClick={() => removeUrl(i)}
@@ -153,7 +158,7 @@ function EngageSection({ postedToday, locked, isLogging, onLog }: EngageSectionP
             )}
 
             <button
-              onClick={() => onLog(urls.filter(u => u.trim().length > 0))}
+              onClick={() => onLog(urls.filter(u => isValidUrl(u)))}
               disabled={!hasValid || isLogging}
               className="w-full py-2 rounded-xl border border-[#1D9E75] text-[#1D9E75] hover:bg-[#1D9E75]/5 disabled:opacity-40 font-semibold text-sm transition-colors"
             >

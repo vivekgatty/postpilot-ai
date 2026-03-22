@@ -340,7 +340,7 @@ export default function HooksPage() {
             id="idea" value={idea}
             onChange={e => setIdea(e.target.value)}
             placeholder="E.g. I grew my LinkedIn to 5k followers in 60 days without paid ads..."
-            rows={3}
+            rows={3} maxLength={2000}
             className="w-full border border-[#E5E4E0] rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75] transition-colors placeholder:text-gray-400"
             style={{ minHeight: '80px' }}
           />

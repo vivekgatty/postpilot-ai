@@ -82,6 +82,7 @@ export default function OnboardingSteps({
   const [visible, setVisible]           = useState(true)
   const [saving, setSaving]             = useState(false)
   const [avatarLoading, setAvatarLoading] = useState(false)
+  const [nameTouched, setNameTouched]   = useState(false)
   const fileInputRef                    = useRef<HTMLInputElement>(null)
 
   const [data, setData] = useState<OnboardingFormData>({
@@ -230,9 +231,14 @@ export default function OnboardingSteps({
                 autoComplete="name"
                 value={data.full_name}
                 onChange={e => setData(d => ({ ...d, full_name: e.target.value }))}
+                onBlur={() => setNameTouched(true)}
                 placeholder="Priya Sharma"
+                maxLength={100}
                 className={inputCls}
               />
+              {nameTouched && !data.full_name.trim() && (
+                <p className="mt-1 text-xs text-red-500">Full name is required</p>
+              )}
             </div>
 
             <div>
@@ -245,6 +251,7 @@ export default function OnboardingSteps({
                 value={data.role}
                 onChange={e => setData(d => ({ ...d, role: e.target.value }))}
                 placeholder="Senior Product Manager at Razorpay"
+                maxLength={150}
                 className={inputCls}
               />
             </div>
@@ -260,9 +267,10 @@ export default function OnboardingSteps({
                 <input
                   id="ob-li"
                   type="text"
-                  value={data.linkedin_url.replace(/.*linkedin\.com\/in\//i, '')}
+                  value={data.linkedin_url.replace(/.*linkedin\.com\/in\//i, '').replace(/[/?#].*$/, '')}
                   onChange={e => {
-                    const slug = e.target.value.replace(/.*linkedin\.com\/in\//i, '')
+                    const raw  = e.target.value.replace(/.*linkedin\.com\/in\//i, '')
+                    const slug = raw.replace(/[/?#].*$/, '').replace(/\/$/, '').trim()
                     setData(d => ({
                       ...d,
                       linkedin_url: slug ? `https://linkedin.com/in/${slug}` : '',

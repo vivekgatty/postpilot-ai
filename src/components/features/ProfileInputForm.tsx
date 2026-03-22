@@ -1140,7 +1140,7 @@ export default function ProfileInputForm({
                 <button
                   type="button"
                   disabled={isAnalyzing}
-                  onClick={() => onComplete(formData, goal, targetAudience, targetKeywords)}
+                  onClick={() => onComplete(formData, goal, targetAudience.trim(), targetKeywords.map(k => k.trim()).filter(k => k))}
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-base font-bold transition-all"
                   style={{
                     background: isAnalyzing ? '#E5E4E0' : '#1D9E75',

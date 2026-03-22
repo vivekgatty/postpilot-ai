@@ -310,7 +310,7 @@ function GeneratePageInner() {
             onChange={(e) => { setTopic(e.target.value); adjustTextarea() }}
             onInput={adjustTextarea}
             placeholder="E.g. I just landed our first 10 paying customers without spending ₹1 on ads. Here's exactly what worked..."
-            rows={4} disabled={generating}
+            rows={4} disabled={generating} maxLength={5000}
             className="w-full border border-[#E5E4E0] rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75] transition-colors placeholder:text-gray-400 disabled:opacity-50"
             style={{ minHeight: '104px', overflowY: 'hidden' }}
           />

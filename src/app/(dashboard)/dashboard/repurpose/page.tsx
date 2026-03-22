@@ -289,9 +289,18 @@ export default function RepurposePage() {
   const isLinkedIn     = isLinkedInUrl(urlInput)
   const platformConfig = SOURCE_PLATFORMS[detectedPlatform]
   const wordCount      = textInput.split(/\s+/).filter(Boolean).length
+
+  function isValidUrl(u: string): boolean {
+    try {
+      const parsed = new URL(u.trim())
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch { return false }
+  }
+
+  const urlIsValid     = isValidUrl(urlInput)
   const canExtract     = !isExtracting && (
     pdfFile !== null ||
-    (sourceTab === 'url' ? urlInput.trim().length >= 10 && !isLinkedIn : wordCount >= 50)
+    (sourceTab === 'url' ? urlIsValid && !isLinkedIn : wordCount >= 50)
   )
 
   // ── Step 1: Extraction preview ─────────────────────────────────────────────
@@ -660,7 +669,12 @@ export default function RepurposePage() {
               </p>
             </div>
           )}
-          {urlError && !isLinkedIn && (
+          {urlInput.trim() && !isLinkedIn && !urlIsValid && (
+            <p className="text-xs text-red-600 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />Please enter a valid URL starting with https://
+            </p>
+          )}
+          {urlError && !isLinkedIn && urlIsValid && (
             <p className="text-xs text-red-600 flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" />{urlError}
             </p>
