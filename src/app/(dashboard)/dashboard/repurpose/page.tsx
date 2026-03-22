@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useUser }  from '@/hooks/useUser'
 import { useToast } from '@/components/ui/Toast'
 import { cn }       from '@/lib/utils'
-import { Link2, FileText, AlertTriangle, RotateCw, Check, ChevronDown, ChevronUp, Lock, Trash2, Bookmark, Eye, EyeOff } from 'lucide-react'
+import { Link2, FileText, AlertTriangle, RotateCw, Check, ChevronDown, ChevronUp, Lock, Trash2, Bookmark, Eye, EyeOff, Upload, X } from 'lucide-react'
 import {
   detectPlatform, isLinkedInUrl, SOURCE_PLATFORMS, REPURPOSE_LIMITS, GENERIC_ANGLES_FREE,
 } from '@/lib/repurposeConfig'
@@ -73,6 +73,12 @@ export default function RepurposePage() {
   const [sessionPosts,      setSessionPosts]      = useState<Record<string, string[]>>({})
   const [genMsgIdx,       setGenMsgIdx]       = useState(0)
   const [showFullText,    setShowFullText]     = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handlePdfUpload = useCallback((file: File) => {
+    setPdfFile(file)
+    setUrlError(null)
+  }, [])
 
   // ── Rotate generate messages ───────────────────────────────────────────────
   const GEN_MSGS = [
@@ -95,10 +101,17 @@ export default function RepurposePage() {
     setIsExtracting(true)
     setUrlError(null)
     try {
-      const body = sourceTab === 'url' ? { url: urlInput.trim() } : { text: textInput.trim() }
-      const res  = await fetch('/api/repurpose/extract', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-      })
+      let res: Response
+      if (pdfFile) {
+        const fd = new FormData()
+        fd.append('file', pdfFile)
+        res = await fetch('/api/repurpose/extract', { method: 'POST', body: fd })
+      } else {
+        const body = sourceTab === 'url' ? { url: urlInput.trim() } : { text: textInput.trim() }
+        res = await fetch('/api/repurpose/extract', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        })
+      }
       const data = await res.json()
 
       if (data.needs_manual_paste) {
@@ -127,7 +140,7 @@ export default function RepurposePage() {
     } finally {
       setIsExtracting(false)
     }
-  }, [sourceTab, urlInput, textInput, toast])
+  }, [sourceTab, urlInput, textInput, pdfFile, toast])
 
   // ── Angles ─────────────────────────────────────────────────────────────────
   const handleAnglesLoad = useCallback(async () => {
@@ -276,7 +289,8 @@ export default function RepurposePage() {
   const platformConfig = SOURCE_PLATFORMS[detectedPlatform]
   const wordCount      = textInput.split(/\s+/).filter(Boolean).length
   const canExtract     = !isExtracting && (
-    sourceTab === 'url' ? urlInput.trim().length >= 10 && !isLinkedIn : wordCount >= 50
+    pdfFile !== null ||
+    (sourceTab === 'url' ? urlInput.trim().length >= 10 && !isLinkedIn : wordCount >= 50)
   )
 
   // ── Step 1: Extraction preview ─────────────────────────────────────────────
@@ -560,6 +574,40 @@ export default function RepurposePage() {
     </div>
   )
 
+  // ── Step progress indicator ────────────────────────────────────────────────
+  const STEP_LABELS = ['Source', 'Review', 'Configure', 'Results']
+  const StepProgressIndicator = (
+    <div className="flex items-center w-full mb-6">
+      {STEP_LABELS.map((label, idx) => (
+        <div key={idx} className="flex items-center flex-1 last:flex-initial">
+          <div className="flex flex-col items-center">
+            <div className={cn(
+              'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all',
+              currentStep > idx  ? 'bg-[#1D9E75] border-[#1D9E75] text-white' :
+              currentStep === idx ? 'border-[#1D9E75] text-[#1D9E75] bg-white' :
+                                    'border-gray-200 text-gray-400 bg-white',
+            )}>
+              {currentStep > idx ? <Check className="w-4 h-4" /> : idx + 1}
+            </div>
+            <span className={cn(
+              'text-[11px] mt-1 font-semibold whitespace-nowrap',
+              currentStep > idx  ? 'text-gray-500' :
+              currentStep === idx ? 'text-[#1D9E75]' : 'text-gray-300',
+            )}>
+              {label}
+            </span>
+          </div>
+          {idx < STEP_LABELS.length - 1 && (
+            <div className={cn(
+              'flex-1 h-px mx-2 mb-5 transition-all',
+              currentStep > idx ? 'bg-[#1D9E75]' : 'bg-gray-200',
+            )} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+
   // ── Source input step (Step 0) ─────────────────────────────────────────────
   const SourceInputStep = (
     <div className="bg-white rounded-2xl border border-[#E5E4E0] p-6 space-y-5">
@@ -626,6 +674,36 @@ export default function RepurposePage() {
         </div>
       )}
 
+      {/* PDF upload zone */}
+      {plan === 'free' ? (
+        <div className="flex items-center justify-center gap-2 h-20 rounded-xl border-2 border-dashed border-gray-100 bg-gray-50 cursor-not-allowed">
+          <Lock className="w-4 h-4 text-gray-300" />
+          <span className="text-xs text-gray-400">PDF upload — Starter plan</span>
+        </div>
+      ) : (
+        <div>
+          {pdfFile ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#1D9E75]/40 bg-[#E1F5EE]/50">
+              <FileText className="w-4 h-4 text-[#1D9E75] flex-shrink-0" />
+              <span className="text-xs font-semibold text-[#1D9E75] flex-1 truncate">{pdfFile.name}</span>
+              <button type="button" onClick={() => { setPdfFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 w-full h-20 rounded-xl border-2 border-dashed border-gray-200 hover:border-[#1D9E75]/40 hover:bg-gray-50 transition-all text-gray-400 hover:text-[#1D9E75]">
+              <Upload className="w-4 h-4" />
+              <span className="text-xs">Drag a PDF here or click to upload</span>
+            </button>
+          )}
+          <input ref={fileInputRef} type="file" accept=".pdf" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f) }}
+          />
+        </div>
+      )}
+
       {/* Extract button */}
       <button type="button" onClick={handleExtract} disabled={!canExtract}
         className={cn(
@@ -661,6 +739,7 @@ export default function RepurposePage() {
 
       {activeTab === 'repurpose' && (
         <div>
+          {StepProgressIndicator}
           {currentStep === 0 && SourceInputStep}
           {currentStep === 1 && ExtractionPreviewStep}
           {currentStep === 2 && ConfigureStep}
