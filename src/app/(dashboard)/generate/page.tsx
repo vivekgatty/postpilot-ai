@@ -92,8 +92,9 @@ function GeneratePageInner() {
   const [savedSet, setSavedSet]   = useState(new Set<number>())
   const [savingIdx, setSavingIdx] = useState<number | null>(null)
 
-  const [usage, setUsage] = useState<UsageInfo | null>(null)
-  const { toast }         = useToast()
+  const [usage, setUsage]                   = useState<UsageInfo | null>(null)
+  const [generationError, setGenerationError] = useState<string | null>(null)
+  const { toast }                             = useToast()
 
   // ── Pre-fill from ?topic= or ?hook= ─────────────────────────────────────
   const [fromHook, setFromHook] = useState(false)
@@ -194,6 +195,7 @@ function GeneratePageInner() {
     setGenerating(true)
     setSavedSet(new Set())
     setPosts([])
+    setGenerationError(null)
 
     try {
       const res = await fetch('/api/generate', {
@@ -209,12 +211,17 @@ function GeneratePageInner() {
           customFormatPrompt: formatIsCustom ? customFormatPrompt : undefined,
         }),
       })
-      const data = await res.json() as { posts?: GeneratedPost[]; error?: string }
-      if (!res.ok) throw new Error(data.error ?? 'Generation failed')
+      const data = await res.json() as { posts?: GeneratedPost[]; error?: string; message?: string }
+      if (!res.ok) {
+        if (res.status === 403) refreshUsage()
+        throw new Error(data.message ?? data.error ?? 'Generation failed')
+      }
       setPosts(data.posts ?? [])
       refreshUsage()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Generation failed — please try again')
+      const msg = err instanceof Error ? err.message : 'Generation failed — please try again'
+      toast.error(msg)
+      setGenerationError(msg)
     } finally {
       setGenerating(false)
     }
@@ -397,21 +404,42 @@ function GeneratePageInner() {
 
         {showEmpty && (
           <div className="flex flex-col items-center justify-center h-full min-h-[420px] text-center px-8">
-            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-5" aria-hidden="true">
-              <circle cx="40" cy="40" r="38" fill="#E1F5EE" stroke="#1D9E75" strokeWidth="1.5" />
-              <ellipse cx="40" cy="44" rx="17" ry="14" fill="#1D9E75" opacity="0.18" />
-              <circle cx="32" cy="36" r="4.5" fill="#0A2540" />
-              <circle cx="48" cy="36" r="4.5" fill="#0A2540" />
-              <circle cx="33.5" cy="34.5" r="1.5" fill="white" />
-              <circle cx="49.5" cy="34.5" r="1.5" fill="white" />
-              <path d="M33 46 Q40 53 47 46" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" fill="none" />
-              <path d="M26 23 L21 13" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M54 23 L59 13" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="65" cy="22" r="2" fill="#1D9E75" opacity="0.5" />
-              <circle cx="16" cy="28" r="1.5" fill="#1D9E75" opacity="0.4" />
-            </svg>
-            <h2 className="text-lg font-bold text-[#0A2540] mb-1.5">Your posts will appear here</h2>
-            <p className="text-sm text-gray-400">Fill in your idea and hit Generate →</p>
+            {generationError ? (
+              <>
+                <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                  <span className="text-2xl">⚠️</span>
+                </div>
+                <h2 className="text-base font-bold text-gray-800 mb-1.5">Generation failed</h2>
+                <p className="text-sm text-gray-500 mb-4 max-w-xs">{generationError}</p>
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={!canGenerate}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1D9E75] hover:bg-[#178a64] text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Try again
+                </button>
+              </>
+            ) : (
+              <>
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-5" aria-hidden="true">
+                  <circle cx="40" cy="40" r="38" fill="#E1F5EE" stroke="#1D9E75" strokeWidth="1.5" />
+                  <ellipse cx="40" cy="44" rx="17" ry="14" fill="#1D9E75" opacity="0.18" />
+                  <circle cx="32" cy="36" r="4.5" fill="#0A2540" />
+                  <circle cx="48" cy="36" r="4.5" fill="#0A2540" />
+                  <circle cx="33.5" cy="34.5" r="1.5" fill="white" />
+                  <circle cx="49.5" cy="34.5" r="1.5" fill="white" />
+                  <path d="M33 46 Q40 53 47 46" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" fill="none" />
+                  <path d="M26 23 L21 13" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M54 23 L59 13" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round" />
+                  <circle cx="65" cy="22" r="2" fill="#1D9E75" opacity="0.5" />
+                  <circle cx="16" cy="28" r="1.5" fill="#1D9E75" opacity="0.4" />
+                </svg>
+                <h2 className="text-lg font-bold text-[#0A2540] mb-1.5">Your posts will appear here</h2>
+                <p className="text-sm text-gray-400">Fill in your idea and hit Generate →</p>
+              </>
+            )}
           </div>
         )}
 

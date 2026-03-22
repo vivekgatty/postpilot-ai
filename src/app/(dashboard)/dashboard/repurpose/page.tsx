@@ -122,7 +122,7 @@ export default function RepurposePage() {
         return
       }
       if (!res.ok) {
-        const msg = data.error ?? 'Extraction failed.'
+        const msg = data.message ?? data.error ?? 'Extraction failed.'
         toast.error(msg)
         setUrlError(msg)
         return
@@ -149,7 +149,7 @@ export default function RepurposePage() {
     try {
       const res  = await fetch('/api/repurpose/angles', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, post_count: postCount }),
+        body: JSON.stringify({ session_id: sessionId, post_count: postCount, extracted_text: editableText || undefined }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -159,7 +159,7 @@ export default function RepurposePage() {
       }
     } catch { toast.error('Could not load angles.') }
     setAnglesLoading(false)
-  }, [sessionId, postCount, toast])
+  }, [sessionId, postCount, editableText, toast])
 
   // ── Generate ───────────────────────────────────────────────────────────────
   const handleGenerate = useCallback(async () => {

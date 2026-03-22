@@ -195,6 +195,7 @@ function StylePill({
       data-active={selected}
       onClick={isLocked ? undefined : onToggle}
       disabled={isLocked}
+      title={isLocked ? 'Requires Starter plan — upgrade in Settings' : undefined}
       className={cn(
         'relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150',
         borderClass,
@@ -274,8 +275,8 @@ export default function HooksPage() {
           selectedStyles: Array.from(selectedStyles),
         }),
       })
-      const data = await res.json() as { hooks?: HookResult[]; error?: string }
-      if (!res.ok) throw new Error(data.error ?? 'Generation failed')
+      const data = await res.json() as { hooks?: HookResult[]; error?: string; message?: string }
+      if (!res.ok) throw new Error(data.message ?? data.error ?? 'Generation failed')
       setHooks(data.hooks ?? [])
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Generation failed — please try again')

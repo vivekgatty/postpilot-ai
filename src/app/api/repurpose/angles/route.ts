@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    let body: { session_id: string; post_count: number; niche?: string }
+    let body: { session_id: string; post_count: number; niche?: string; extracted_text?: string }
     try { body = await req.json() } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
@@ -45,8 +45,17 @@ export async function POST(req: NextRequest) {
     const isPaid = plan !== 'free'
     const niche  = body.niche ?? profile?.niche ?? 'Other'
 
+    // Persist user-edited text if provided
+    const extractedText = body.extracted_text ?? session.extracted_text ?? ''
+    if (body.extracted_text && body.extracted_text !== session.extracted_text) {
+      await supabase
+        .from('repurpose_sessions')
+        .update({ extracted_text: body.extracted_text })
+        .eq('id', session_id)
+    }
+
     const { angles, is_generic } = await generateAngles(
-      session.extracted_text ?? '',
+      extractedText,
       session.source_title   ?? '',
       session.source_author  ?? '',
       niche,

@@ -88,7 +88,7 @@ export default function PostCard({
       content: encodeURIComponent(post.content),
       post_type: 'text',
     })
-    router.push('/dashboard/analyse?' + params.toString())
+    router.push('/analyse?' + params.toString())
   }
 
   return (

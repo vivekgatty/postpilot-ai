@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
 
-    if (session.status !== 'extracted') {
+    if (!['extracted', 'complete'].includes(session.status)) {
       return NextResponse.json({ error: 'Session is not in extracted state' }, { status: 400 })
     }
 
