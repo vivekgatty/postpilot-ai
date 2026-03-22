@@ -14,6 +14,7 @@ interface CarouselEditorProps {
   onRegenerateSlide:  (slideId: string) => Promise<void>
   isRegenerating:     Record<string, boolean>
   selectedSlideId?:   string
+  onSelectSlide?:     (slideId: string) => void
 }
 
 // ── Type badge helpers ─────────────────────────────────────────────────────────
@@ -59,6 +60,7 @@ export default function CarouselEditor({
   onRegenerateSlide,
   isRegenerating,
   selectedSlideId: externalSlideId,
+  onSelectSlide,
 }: CarouselEditorProps) {
   const [selectedSlideId, setSelectedSlideId] = useState<string>(
     externalSlideId ?? carousel.slides[0]?.id ?? '',
@@ -156,7 +158,7 @@ export default function CarouselEditor({
                         <div
                           ref={drag.innerRef}
                           {...drag.draggableProps}
-                          onClick={() => setSelectedSlideId(slide.id)}
+                          onClick={() => { setSelectedSlideId(slide.id); onSelectSlide?.(slide.id) }}
                           className={`group flex items-center gap-2 px-3 h-14 cursor-pointer border-l-[3px] transition-colors ${
                             isSelected
                               ? 'border-[#1D9E75] bg-teal-50'

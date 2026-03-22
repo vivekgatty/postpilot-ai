@@ -576,8 +576,9 @@ export default function AuditPage() {
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Something went wrong'); return }
       if (data.exists) {
-        // Existing unlocked audit — skip to result view
+        // Existing unlocked audit — show full result immediately
         setAuditId(data.auditId)
+        if (data.result) setResult(data.result)
         setStep(5)
         return
       }

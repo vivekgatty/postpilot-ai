@@ -76,19 +76,17 @@ export async function POST(req: NextRequest) {
 
     const userId: string | null = existingProfile?.id ?? null
 
-    if (!existingProfile) {
-      // Send magic link — this creates the user if they don't exist
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        email: email.toLowerCase().trim(),
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://postpika.com'}/api/auth/callback?next=/dashboard/audit`,
-        },
-      })
-      if (otpErr) {
-        console.error('[audit/unlock] OTP error', otpErr)
-        // Non-fatal — we still unlock the audit even if magic link fails
-      }
+    // Always send a magic link: creates account for new users, signs in existing ones
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email: email.toLowerCase().trim(),
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://postpika.com'}/api/auth/callback?next=/dashboard/audit`,
+      },
+    })
+    if (otpErr) {
+      console.error('[audit/unlock] OTP error', otpErr)
+      // Non-fatal — we still unlock the audit even if magic link fails
     }
 
     // 4. Update audit: set is_unlocked=true, email, user_id

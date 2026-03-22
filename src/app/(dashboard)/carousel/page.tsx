@@ -730,6 +730,10 @@ export default function CarouselPage() {
                   onRegenerateSlide={handleRegenerateSlide}
                   isRegenerating={isRegenerating}
                   selectedSlideId={slides[selectedSlideIndex]?.id}
+                  onSelectSlide={(slideId) => {
+                    const idx = slides.findIndex(s => s.id === slideId)
+                    if (idx !== -1) setSelectedSlideIndex(idx)
+                  }}
                 />
               </div>
 
@@ -740,26 +744,43 @@ export default function CarouselPage() {
                 <div className="bg-white border border-[#E5E4E0] rounded-xl p-3">
                   <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Theme</p>
                   <div className="flex gap-2 overflow-x-auto pb-1">
-                    {CAROUSEL_THEMES.map(theme => (
-                      <button
-                        key={theme.id}
-                        onClick={() => handleUpdateCarousel({ theme_id: theme.id })}
-                        title={theme.label}
-                        className={cn(
-                          'flex-shrink-0 w-9 h-9 rounded-lg border-2 transition-all relative overflow-hidden',
-                          selectedTheme === theme.id
-                            ? 'border-[#1D9E75] scale-110 shadow-sm'
-                            : 'border-transparent hover:border-gray-300',
-                        )}
-                        style={{ background: theme.background }}
-                      >
-                        <span
-                          className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
-                          style={{ background: theme.accent_color }}
-                        />
-                        <span className="sr-only">{theme.label}</span>
-                      </button>
-                    ))}
+                    {CAROUSEL_THEMES.map(theme => {
+                      const themeRank   = PLAN_ORDER.indexOf(theme.plan_required as typeof PLAN_ORDER[number])
+                      const isThemeLocked = themeRank > planIndex
+                      return (
+                        <button
+                          key={theme.id}
+                          onClick={() => {
+                            if (isThemeLocked) {
+                              toast.info(`"${theme.label}" requires ${theme.plan_required} plan`)
+                              return
+                            }
+                            handleUpdateCarousel({ theme_id: theme.id })
+                          }}
+                          title={isThemeLocked ? `${theme.label} — ${theme.plan_required} plan` : theme.label}
+                          className={cn(
+                            'flex-shrink-0 w-9 h-9 rounded-lg border-2 transition-all relative overflow-hidden',
+                            isThemeLocked
+                              ? 'opacity-50 cursor-not-allowed border-transparent'
+                              : selectedTheme === theme.id
+                                ? 'border-[#1D9E75] scale-110 shadow-sm'
+                                : 'border-transparent hover:border-gray-300',
+                          )}
+                          style={{ background: theme.background }}
+                        >
+                          <span
+                            className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
+                            style={{ background: theme.accent_color }}
+                          />
+                          {isThemeLocked && (
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Lock className="w-2.5 h-2.5 text-white" />
+                            </span>
+                          )}
+                          <span className="sr-only">{theme.label}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 

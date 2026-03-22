@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { cn } from '@/lib/utils'
 import PlannerSetupWizard from '@/components/features/PlannerSetupWizard'
 import PlannerCalendar    from '@/components/features/PlannerCalendar'
@@ -310,6 +311,19 @@ export default function PlannerPage() {
     showToast('Saved to content bank')
   }
 
+  // ── Calendar drag-and-drop (bank → calendar) ──────────────────────────────────
+  const handleCalendarDragEnd = useCallback((result: DropResult) => {
+    if (!result.destination) return
+    const droppableId = result.destination.droppableId
+    if (!droppableId.startsWith('day-')) return
+    const dateStr = droppableId.replace('day-', '')
+    const date    = new Date(dateStr + 'T00:00:00')
+    if (result.draggableId.startsWith('bank-')) {
+      const item = (window as Window & { __dragBankItem?: import('@/types').ContentBankItem }).__dragBankItem
+      if (item) handleDropFromBank(item, date)
+    }
+  }, [handleDropFromBank])
+
   // ── Settings saved ────────────────────────────────────────────────────────────
   const handleSettingsSaved = (newSettings: PlannerSettings, newPillars: ContentPillar[]) => {
     setSettings(newSettings)
@@ -325,6 +339,7 @@ export default function PlannerPage() {
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
+    <DragDropContext onDragEnd={handleCalendarDragEnd}>
     <div className="flex h-full min-h-screen bg-[#F7F6F3]">
 
       {/* Setup wizard overlay */}
@@ -524,5 +539,6 @@ export default function PlannerPage() {
       )}
 
     </div>
+    </DragDropContext>
   )
 }

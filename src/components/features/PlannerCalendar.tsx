@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd'
+import { Droppable, DropResult } from '@hello-pangea/dnd'
 import { cn } from '@/lib/utils'
 import { FORMAT_ICONS } from '@/lib/plannerConfig'
 import type { PlannedPost, ContentPillar, ContentBankItem } from '@/types'
@@ -322,7 +322,7 @@ export default function PlannerCalendar({
   const monthLabel = currentMonth.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <div>
       <div>
         {/* Progress bar */}
         <div className="mb-4">
@@ -376,6 +376,6 @@ export default function PlannerCalendar({
         {/* Calendar grid */}
         {view === 'month' ? renderMonthGrid() : renderWeekView()}
       </div>
-    </DragDropContext>
+    </div>
   )
 }
