@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     const contentType = req.headers.get('content-type') ?? ''
-    let extracted = {
+    const extracted = {
       title:              '',
       author:             '',
       text:               '',
