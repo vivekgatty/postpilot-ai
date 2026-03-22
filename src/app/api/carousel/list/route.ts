@@ -1,11 +1,11 @@
 export const dynamic = 'force-dynamic'
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 // ── GET /api/carousel/list ────────────────────────────────────────────────────
 
-export async function GET(_req: NextRequest) {
+export async function GET(): Promise<NextResponse> {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
