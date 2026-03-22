@@ -43,6 +43,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Rate-limit: max 3 improvement requests per audit per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { count: recentCount } = await supabase
+      .from('usage_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('action', 'brand_audit_improve')
+      .contains('metadata', { audit_id: auditId })
+      .gte('created_at', oneHourAgo)
+
+    if ((recentCount ?? 0) >= 3) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 },
+      )
+    }
+
     const currentScore    = audit.total_score ?? 0
     const targetScore     = Math.min(currentScore + 5, 100)
     const currentLevel    = getLevelFromScore(currentScore)

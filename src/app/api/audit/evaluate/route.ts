@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'answers object is required' }, { status: 400 })
     }
 
+    // Cap samplePostContent to prevent oversized Claude prompts
+    const cappedPostContent = typeof samplePostContent === 'string'
+      ? samplePostContent.slice(0, 5000)
+      : undefined
+
     const supabase = await createClient()
 
     // 1. Fetch the audit
@@ -45,12 +50,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Audit not found' }, { status: 404 })
     }
 
+    // Rate-limit: if already evaluated, return cached result (prevents re-evaluation spam)
+    if (audit.total_score > 0 && Array.isArray(audit.scores) && audit.scores.length > 0) {
+      const level = getLevelFromScore(audit.total_score)
+      const tier  = getTierFromLevel(level.tier)
+      const cachedResult = {
+        id:                  audit.id,
+        linkedin_url:        audit.linkedin_url,
+        linkedin_username:   audit.linkedin_username,
+        full_name:           audit.full_name,
+        profile_photo_url:   audit.profile_photo_url,
+        sample_post_content: audit.sample_post_content ?? null,
+        total_score:         audit.total_score,
+        tier_key:            level.tier,
+        tier_label:          tier?.label ?? level.tier,
+        level_name:          level.label,
+        level_key:           level.key,
+        dimension_scores:    audit.scores,
+        ai_top_actions:      Array.isArray(audit.ai_top_actions) ? audit.ai_top_actions : [],
+        ai_content_quality:  audit.ai_content_quality ?? null,
+        is_unlocked:         false,
+        share_token:         audit.share_token,
+        created_at:          audit.created_at,
+      }
+      return NextResponse.json({ result: cachedResult })
+    }
+
     // 2. Update audit with raw data immediately
     await supabase
       .from('brand_audits')
       .update({
         answers,
-        sample_post_content: samplePostContent ?? null,
+        sample_post_content: cappedPostContent ?? null,
         sample_post_url:     samplePostUrl ?? null,
       })
       .eq('id', auditId)
@@ -59,7 +90,7 @@ export async function POST(req: NextRequest) {
     let aiContentQuality: AIContentQuality | undefined
 
     // 3. Evaluate post quality with Claude (if post provided, min 50 chars)
-    if (samplePostContent && samplePostContent.trim().length >= 50) {
+    if (cappedPostContent && cappedPostContent.trim().length >= 50) {
       try {
         const postEvalMsg = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
@@ -71,7 +102,7 @@ export async function POST(req: NextRequest) {
               content: `Evaluate this LinkedIn post across 5 dimensions. Score each out of the specified maximum.
 
 POST:
-${samplePostContent}
+${cappedPostContent}
 
 Score these dimensions:
 1. Hook strength (0-5): Does line 1 stop a scroll?
@@ -202,7 +233,7 @@ Return ONLY valid JSON:
       linkedin_username:   audit.linkedin_username,
       full_name:           audit.full_name,
       profile_photo_url:   audit.profile_photo_url,
-      sample_post_content: samplePostContent ?? null,
+      sample_post_content: cappedPostContent ?? null,
       total_score:         totalScore,
       tier_key:            level.tier,
       tier_label:          tier?.label ?? level.tier,

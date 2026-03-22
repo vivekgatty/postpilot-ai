@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { calculateStreak } from '@/lib/streakEngine'
 import type { StreakLog, StreakState } from '@/types'
 
+const VALID_LOG_TYPES = ['publish', 'engage', 'plan'] as const
+
 // ── POST /api/streak/grace ────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -15,7 +17,11 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const log_type: string = body.log_type ?? 'publish'
+    const raw_log_type: unknown = body.log_type ?? 'publish'
+    if (!VALID_LOG_TYPES.includes(raw_log_type as typeof VALID_LOG_TYPES[number])) {
+      return NextResponse.json({ error: 'Invalid log_type' }, { status: 400 })
+    }
+    const log_type = raw_log_type as typeof VALID_LOG_TYPES[number]
 
     // Fetch streak state
     const { data: stateData, error: stateError } = await supabase
