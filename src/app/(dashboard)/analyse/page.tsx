@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast'
 import AnalyserScoreCard from '@/components/features/AnalyserScoreCard'
 import AnalyserSuggestions from '@/components/features/AnalyserSuggestions'
 import AnalyserTimingCard from '@/components/features/AnalyserTimingCard'
-import type { PostAnalysis, AnalysisSuggestion, NicheType } from '@/types'
+import type { PostAnalysis, AnalysisSuggestion, NicheType, BulkAnalysisPost } from '@/types'
 import { ANALYSER_LIMITS, getGradeFromScore } from '@/lib/analyserConfig'
 import { NICHE_OPTIONS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
@@ -64,6 +64,11 @@ export default function AnalysePage() {
   const [historyLoading,     setHistoryLoading]     = useState(false)
   const [selectedDimensionId, setSelectedDimensionId] = useState<string | null>(null)
   const [copiedPost,         setCopiedPost]         = useState(false)
+  const [bulkPosts,          setBulkPosts]          = useState<string[]>(['', ''])
+  const [bulkPostType,       setBulkPostType]       = useState<'text' | 'carousel' | 'poll' | 'question'>('text')
+  const [bulkResults,        setBulkResults]        = useState<BulkAnalysisPost[] | null>(null)
+  const [bulkWinner,         setBulkWinner]         = useState<number | null>(null)
+  const [isBulkAnalysing,    setIsBulkAnalysing]    = useState(false)
 
   void selectedDimensionId
 
@@ -203,6 +208,42 @@ export default function AnalysePage() {
       // noop — silently fail; history tab will show empty
     } finally {
       setHistoryLoading(false)
+    }
+  }
+
+  async function handleBulkAnalyse() {
+    const plan = profile?.plan || 'free'
+    if (!(['pro', 'agency'] as string[]).includes(plan)) {
+      toast.info('Bulk analysis available on Pro plan')
+      return
+    }
+    const validPosts = bulkPosts.filter(p => p.trim().length >= 50)
+    if (validPosts.length < 2) {
+      toast.error('Add at least 2 posts with 50+ characters each')
+      return
+    }
+    setIsBulkAnalysing(true)
+    try {
+      const res = await fetch('/api/analyse/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ posts: validPosts, post_type: bulkPostType, niche }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        if (res.status === 403) {
+          toast.info(data.message ?? 'Upgrade required')
+        } else {
+          toast.error('Bulk analysis failed')
+        }
+        return
+      }
+      setBulkResults(data.posts)
+      setBulkWinner(data.winner_index)
+    } catch {
+      toast.error('Bulk analysis failed')
+    } finally {
+      setIsBulkAnalysing(false)
     }
   }
 
@@ -473,18 +514,226 @@ export default function AnalysePage() {
         )}
 
         {activeTab === 'bulk' && (
-          <div className="text-center p-8 text-gray-400">
-            Bulk tab — built in next prompt
+          <div className="flex flex-col gap-6 max-w-3xl">
+            {!(['pro', 'agency'] as string[]).includes(profile?.plan || '') && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800 font-medium">
+                  Bulk Compare — Pro plan feature
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  Compare up to 5 versions of a post to see which is strongest before publishing.
+                </p>
+                <a href="/dashboard/settings"
+                  className="text-xs text-teal-600 font-medium hover:underline mt-2 inline-block">
+                  Upgrade to Pro →
+                </a>
+              </div>
+            )}
+            <div className="flex gap-2 items-center flex-wrap">
+              <span className="text-sm text-gray-500">Post type:</span>
+              {(['text', 'carousel', 'poll', 'question'] as const).map(t => (
+                <button key={t}
+                  type="button"
+                  onClick={() => setBulkPostType(t)}
+                  className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                    bulkPostType === t
+                      ? 'bg-teal-600 text-white border-teal-600'
+                      : 'border-gray-200 text-gray-600 hover:border-teal-300'
+                  }`}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-col gap-3">
+              {bulkPosts.map((post, i) => (
+                <div key={i} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-gray-500">
+                      Post {i + 1}
+                      {bulkResults && bulkWinner === i && (
+                        <span className="ml-2 px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full text-xs font-medium">
+                          ★ Winner
+                        </span>
+                      )}
+                    </label>
+                    {bulkResults && bulkResults[i] && (
+                      <span className="text-xs font-medium"
+                        style={{ color: getGradeFromScore(bulkResults[i].score).color }}>
+                        {bulkResults[i].score}/100 — {bulkResults[i].grade}
+                      </span>
+                    )}
+                  </div>
+                  <textarea
+                    value={post}
+                    onChange={e => {
+                      const updated = [...bulkPosts]
+                      updated[i] = e.target.value
+                      setBulkPosts(updated)
+                    }}
+                    rows={6}
+                    placeholder={`Paste post version ${i + 1} here...`}
+                    className="w-full border rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                  {bulkResults && bulkResults[i] && (
+                    <p className="text-xs text-gray-500 italic">{bulkResults[i].summary}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3 items-center">
+              {bulkPosts.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => setBulkPosts([...bulkPosts, ''])}
+                  className="text-sm text-teal-600 hover:underline"
+                >
+                  + Add another post
+                </button>
+              )}
+              {bulkPosts.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() => setBulkPosts(bulkPosts.slice(0, -1))}
+                  className="text-sm text-gray-400 hover:underline"
+                >
+                  Remove last
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleBulkAnalyse}
+              disabled={isBulkAnalysing || !(['pro', 'agency'] as string[]).includes(profile?.plan || '')}
+              className="px-6 py-3 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 self-start"
+            >
+              {isBulkAnalysing ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Comparing posts...
+                </>
+              ) : (
+                <>
+                  <Layers className="w-4 h-4" />
+                  Compare {bulkPosts.filter(p => p.trim().length >= 50).length} posts
+                </>
+              )}
+            </button>
+            {bulkResults && bulkWinner !== null && (
+              <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg">
+                <p className="text-sm font-medium text-teal-800">
+                  Post {bulkWinner + 1} is your strongest ({bulkResults[bulkWinner].score}/100)
+                </p>
+                <p className="text-xs text-teal-700 mt-1">
+                  {bulkResults[bulkWinner].summary}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPostContent(bulkPosts[bulkWinner!])
+                    setEditedContent(bulkPosts[bulkWinner!])
+                    setActiveTab('analyse')
+                    setCurrentStep(0)
+                  }}
+                  className="text-xs text-teal-600 font-medium hover:underline mt-2 block"
+                >
+                  Run full analysis on winner →
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'history' && (
-          <div className="text-center p-8 text-gray-400">
-            {historyLoading
-              ? 'Loading history…'
-              : savedAnalyses.length === 0
-                ? 'No analyses yet'
-                : 'History tab — built in next prompt'}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-medium">Analysis history</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('analyse')
+                  setCurrentStep(0)
+                }}
+                className="px-3 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 flex items-center gap-2"
+              >
+                <BarChart2 className="w-4 h-4" />
+                New analysis
+              </button>
+            </div>
+            {historyLoading && (
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            )}
+            {!historyLoading && savedAnalyses.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                <History className="w-12 h-12 text-gray-300" />
+                <p className="text-gray-500">No analyses yet</p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('analyse')}
+                  className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700"
+                >
+                  Analyse your first post
+                </button>
+              </div>
+            )}
+            {!historyLoading && savedAnalyses.length > 0 && (
+              <>
+                {!(['starter', 'pro', 'agency'] as string[]).includes(profile?.plan || '') && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                    Free plan shows current session only. Upgrade to Starter to save 30 days of history.
+                  </div>
+                )}
+                <div className="flex flex-col gap-3">
+                  {savedAnalyses.map(a => (
+                    <div key={a.id}
+                      className="flex items-center justify-between p-4 bg-white border rounded-lg gap-4 hover:border-teal-200 transition-colors">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div
+                          className="flex-shrink-0 w-12 h-12 rounded-lg flex flex-col items-center justify-center border"
+                          style={{
+                            borderColor: getGradeFromScore(a.overall_score).color,
+                            backgroundColor: getGradeFromScore(a.overall_score).color + '15',
+                          }}
+                        >
+                          <span className="text-lg font-bold"
+                            style={{ color: getGradeFromScore(a.overall_score).color }}>
+                            {a.grade}
+                          </span>
+                          <span className="text-xs text-gray-500">{a.overall_score}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">
+                            {a.post_content.slice(0, 60)}...
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {a.post_type} · {a.niche} · {new Date(a.created_at!).toLocaleDateString()}
+                            {a.actual_reactions !== undefined && (
+                              <> · {a.actual_reactions} reactions</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurrentAnalysis(a)
+                          setEditedContent(a.post_content)
+                          setPostContent(a.post_content)
+                          setCurrentStep(1)
+                          setActiveTab('analyse')
+                        }}
+                        className="flex-shrink-0 text-xs px-3 py-1.5 border rounded-lg hover:bg-gray-50"
+                      >
+                        View →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
