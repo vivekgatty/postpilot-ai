@@ -232,7 +232,7 @@ export default function LogTodayModal({
 
   const isStarter = plan !== 'free'
   const limits    = STREAK_LIMITS[plan as keyof typeof STREAK_LIMITS] ?? STREAK_LIMITS.free
-  const hasEngage = Array.isArray(limits.streak_types) && limits.streak_types.includes('engage')
+  const _hasEngage = Array.isArray(limits.streak_types) && limits.streak_types.includes('engage')
 
   const headingStreak = currentStreak > 0
     ? `Keep your ${currentStreak}-day streak alive`

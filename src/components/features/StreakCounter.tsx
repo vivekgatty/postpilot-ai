@@ -1,7 +1,7 @@
 'use client'
 
 import { Flame, Lock, Snowflake } from 'lucide-react'
-import { getMilestoneForStreak, getNextMilestone, isStreakActive } from '@/lib/streakConfig'
+import { getNextMilestone, isStreakActive } from '@/lib/streakConfig'
 import type { StreakState } from '@/types'
 
 // ─── Props ────────────────────────────────────────────────────────────────────

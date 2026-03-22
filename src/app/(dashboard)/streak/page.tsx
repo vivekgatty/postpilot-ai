@@ -8,7 +8,7 @@ import StreakCalendar     from '@/components/features/StreakCalendar'
 import StreakAchievements from '@/components/features/StreakAchievements'
 import StreakAnalytics    from '@/components/features/StreakAnalytics'
 import LogTodayModal      from '@/components/features/LogTodayModal'
-import { STREAK_LIMITS, getMilestoneForStreak, getTodayDateString } from '@/lib/streakConfig'
+import { getMilestoneForStreak } from '@/lib/streakConfig'
 import type { StreakDashboardData, StreakAchievement } from '@/types'
 import { Flame, Settings, Calendar, Award, BarChart2, CheckCircle, Snowflake } from 'lucide-react'
 
