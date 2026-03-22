@@ -4,7 +4,6 @@ import { useRef, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { NICHE_META, NICHE_OPTIONS } from '@/lib/constants'
-import { createClient } from '@/lib/supabase/client'
 import type { NicheType } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -99,22 +98,18 @@ export default function OnboardingSteps({
     setTimeout(() => { setStep(next); setVisible(true) }, 180)
   }
 
-  // ── Avatar upload ─────────────────────────────────────────────────────────
+  // ── Avatar upload — routed through server API for validation ─────────────
   const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setAvatarLoading(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const ext  = file.name.split('.').pop() ?? 'jpg'
-      const path = `${user.id}/${Date.now()}.${ext}`
-      const { error: upErr } = await supabase.storage
-        .from('avatars').upload(path, file, { upsert: true })
-      if (!upErr) {
-        const { data: url } = supabase.storage.from('avatars').getPublicUrl(path)
-        setData(d => ({ ...d, avatar_url: url.publicUrl }))
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/user/avatar', { method: 'POST', body: form })
+      if (res.ok) {
+        const { avatarUrl } = await res.json() as { avatarUrl: string }
+        setData(d => ({ ...d, avatar_url: avatarUrl }))
       }
     } finally {
       setAvatarLoading(false)

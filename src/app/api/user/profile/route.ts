@@ -39,9 +39,32 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json() as Partial<Profile>
 
+    // Whitelist only user-editable fields.
+    // NEVER allow: plan, generations_*, razorpay_*, email, id, created_at
+    const allowed: (keyof Profile)[] = [
+      'full_name',
+      'avatar_url',
+      'linkedin_url',
+      'niche',
+      'notification_prefs',
+      'onboarding_completed',
+    ]
+
+    const updates: Partial<Profile> = {}
+    for (const key of allowed) {
+      if (body[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (updates as any)[key] = body[key]
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    }
+
     const { data, error } = await supabase
       .from('profiles')
-      .update({ ...body, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', user.id)
       .select()
       .single()
