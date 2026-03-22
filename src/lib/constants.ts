@@ -135,6 +135,7 @@ export const NAV_ITEMS = [
   { href: '/generate',         label: 'Generate',     icon: 'Sparkles',        proOnly: false },
   { href: '/hooks',            label: 'Hook Writer',  icon: 'Anchor',          proOnly: false },
   { href: '/dashboard/repurpose', label: 'Repurpose', icon: 'RefreshCw',       proOnly: false },
+  { href: '/dashboard/carousel',  label: 'Carousel Creator', icon: 'LayoutTemplate', proOnly: false },
   { href: '/posts',            label: 'My Posts',     icon: 'FileText',        proOnly: false },
   { href: '/calendar',          label: 'Calendar',         icon: 'Calendar',       proOnly: false },
   { href: '/dashboard/planner', label: 'Content Planner', icon: 'Layout',         proOnly: false },
