@@ -6,6 +6,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/linkedin-publisher",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/streak-reminders",
       "schedule": "0 * * * *"
     },

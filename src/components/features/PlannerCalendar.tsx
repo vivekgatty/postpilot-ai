@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Droppable, DropResult } from '@hello-pangea/dnd'
+import { useState } from 'react'
+import { Droppable } from '@hello-pangea/dnd'
 import { cn } from '@/lib/utils'
 import { FORMAT_ICONS } from '@/lib/plannerConfig'
-import type { PlannedPost, ContentPillar, ContentBankItem } from '@/types'
+import type { PlannedPost, ContentPillar } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -38,7 +38,6 @@ interface Props {
   onMonthChange:  (date: Date) => void
   onPostClick:    (post: PlannedPost) => void
   onDayClick:     (date: Date) => void
-  onDropFromBank: (item: ContentBankItem, date: Date) => void
 }
 
 // ── Post chip ─────────────────────────────────────────────────────────────────
@@ -70,7 +69,6 @@ export default function PlannerCalendar({
   onMonthChange,
   onPostClick,
   onDayClick,
-  onDropFromBank,
 }: Props) {
   const [view, setView] = useState<'month' | 'week'>('month')
   const [weekStart, setWeekStart] = useState(() => {
@@ -131,27 +129,6 @@ export default function PlannerCalendar({
     setWeekStart(d)
   }
 
-  // ── DnD handler ───────────────────────────────────────────────────────────────
-
-  const handleDragEnd = useCallback((result: DropResult) => {
-    if (!result.destination) return
-    const droppableId = result.destination.droppableId
-    if (!droppableId.startsWith('day-')) return
-
-    const dateStr = droppableId.replace('day-', '')
-    const date    = new Date(dateStr + 'T00:00:00')
-
-    // The draggable id encodes the bank item id from ContentBankSidebar
-    const bankItemData = result.draggableId.startsWith('bank-')
-      ? result.draggableId.replace('bank-', '')
-      : null
-
-    if (bankItemData) {
-      // ContentBankSidebar passes the full item via window context
-      const item = (window as Window & { __dragBankItem?: ContentBankItem }).__dragBankItem
-      if (item) onDropFromBank(item, date)
-    }
-  }, [onDropFromBank])
 
   // ── Month grid cells ──────────────────────────────────────────────────────────
 

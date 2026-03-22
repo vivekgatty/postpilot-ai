@@ -206,7 +206,7 @@ export default function PlannerPage() {
   }
 
   // ── Drop from content bank ────────────────────────────────────────────────────
-  const handleDropFromBank = async (item: ContentBankItem, date: Date) => {
+  const handleDropFromBank = useCallback(async (item: ContentBankItem, date: Date) => {
     const planned_date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
     const res = await fetch('/api/planner/posts', {
       method:  'POST',
@@ -232,7 +232,7 @@ export default function PlannerPage() {
       })
       setBankItems((prev) => prev.filter((b) => b.id !== item.id))
     }
-  }
+  }, [settings])
 
   // ── Publish now ───────────────────────────────────────────────────────────────
   const handlePublishNow = async (post: PlannedPost) => {
@@ -460,7 +460,6 @@ export default function PlannerPage() {
               onMonthChange={setCurrentMonth}
               onPostClick={setSelectedPost}
               onDayClick={handleDayClick}
-              onDropFromBank={handleDropFromBank}
             />
           ) : (
             <div className="bg-white rounded-2xl border border-[#E5E4E0] h-96 flex items-center justify-center">
