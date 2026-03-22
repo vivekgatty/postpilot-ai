@@ -9,6 +9,7 @@ import Logo from '@/components/ui/Logo'
 export default function OnboardingPage() {
   const router   = useRouter()
   const [initialName, setInitialName] = useState('')
+  const [skipping, setSkipping] = useState(false)
 
   // Pre-fill name from the current auth user (works for OAuth and email)
   useEffect(() => {
@@ -44,13 +45,18 @@ export default function OnboardingPage() {
   }
 
   const handleSkip = async () => {
-    await fetch('/api/user/profile', {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ onboarding_completed: true }),
-    })
-    router.push('/generate')
-    router.refresh()
+    setSkipping(true)
+    try {
+      await fetch('/api/user/profile', {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ onboarding_completed: true }),
+      })
+      router.push('/generate')
+      router.refresh()
+    } catch {
+      setSkipping(false)
+    }
   }
 
   return (
@@ -60,9 +66,10 @@ export default function OnboardingPage() {
       <button
         type="button"
         onClick={handleSkip}
-        className="absolute top-5 right-6 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        disabled={skipping}
+        className="absolute top-5 right-6 text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
       >
-        Skip for now →
+        {skipping ? 'Skipping…' : 'Skip for now →'}
       </button>
 
       <div className="w-full max-w-[540px] flex flex-col items-center">

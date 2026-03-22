@@ -141,6 +141,7 @@ export default function CarouselPage() {
   const [isRegenerating,    setIsRegenerating]    = useState<Record<string, boolean>>({})
   const [savedCarousels,    setSavedCarousels]    = useState<CarouselData[]>([])
   const [historyLoading,    setHistoryLoading]    = useState(false)
+  const [deletingCarouselId, setDeletingCarouselId] = useState<string | null>(null)
   const [showUpgradeModal,  setShowUpgradeModal]  = useState(false)
   const [generatingMessage, setGeneratingMessage] = useState('')
   const [niche,             setNiche]             = useState('Other')
@@ -919,19 +920,25 @@ export default function CarouselPage() {
 
                     <button
                       onClick={async () => {
-                        if (!c.id) return
+                        if (!c.id || deletingCarouselId) return
+                        setDeletingCarouselId(c.id)
                         try {
                           await fetch(`/api/carousel/${c.id}`, { method: 'DELETE' })
                           setSavedCarousels(prev => prev.filter(x => x.id !== c.id))
                           toast.success('Carousel deleted')
                         } catch {
                           toast.error('Could not delete carousel')
+                        } finally {
+                          setDeletingCarouselId(null)
                         }
                       }}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      disabled={deletingCarouselId === c.id}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Delete carousel"
                     >
-                      <X size={14} />
+                      {deletingCarouselId === c.id
+                        ? <span className="w-3.5 h-3.5 border-2 border-gray-300 border-t-red-400 rounded-full animate-spin inline-block" />
+                        : <X size={14} />}
                     </button>
                   </div>
                 </div>

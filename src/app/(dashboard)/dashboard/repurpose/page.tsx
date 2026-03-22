@@ -73,6 +73,7 @@ export default function RepurposePage() {
   const [sessionPosts,      setSessionPosts]      = useState<Record<string, string[]>>({})
   const [genMsgIdx,       setGenMsgIdx]       = useState(0)
   const [showFullText,    setShowFullText]     = useState(false)
+  const [addingToBank,    setAddingToBank]    = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handlePdfUpload = useCallback((file: File) => {
@@ -460,16 +461,23 @@ export default function RepurposePage() {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1D9E75] hover:bg-[#178a64] text-white text-xs font-bold transition-colors">
             <Bookmark className="w-3.5 h-3.5" />Save all drafts
           </button>
-          <button type="button" onClick={async () => {
-            await Promise.all(generatedPosts.map(p =>
-              fetch('/api/planner/content-bank', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: p.angle_title, topic: p.content.slice(0, 200), source: 'manual' }),
-              })
-            ))
-            toast.success('Added to Content Bank!')
-          }} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E4E0] text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-            Add to Content Bank
+          <button type="button" disabled={addingToBank} onClick={async () => {
+            setAddingToBank(true)
+            try {
+              await Promise.all(generatedPosts.map(p =>
+                fetch('/api/planner/content-bank', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ title: p.angle_title, topic: p.content.slice(0, 200), source: 'manual' }),
+                })
+              ))
+              toast.success('Added to Content Bank!')
+            } catch {
+              toast.error('Failed to add to Content Bank')
+            } finally {
+              setAddingToBank(false)
+            }
+          }} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E4E0] text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+            {addingToBank ? 'Adding…' : 'Add to Content Bank'}
           </button>
           <button type="button" onClick={() => toast.info('Go to Content Planner to schedule these posts')}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E4E0] text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
