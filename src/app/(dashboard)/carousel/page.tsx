@@ -16,23 +16,15 @@ import { cn } from '@/lib/utils'
 import {
   Sparkles, Palette, Download, Plus,
   ChevronLeft, ChevronRight, RefreshCw, Copy,
-  Save, ExternalLink, Lock, Check, LayoutTemplate,
+  Save, ExternalLink, Lock, Check, LayoutTemplate, X,
 } from 'lucide-react'
 import type { CarouselSlide, CarouselData, CarouselConfig, AuthorBranding } from '@/types'
 
 // Silence unused-import warnings for required-but-not-called-directly items
 void (useRef as unknown)
-void (ChevronLeft as unknown)
-void (ChevronRight as unknown)
-void (Copy as unknown)
-void (Save as unknown)
 void (ExternalLink as unknown)
-void (Plus as unknown)
-void (LayoutTemplate as unknown)
 void (FONT_STYLES as unknown)
 void (ASPECT_RATIOS as unknown)
-void (CarouselEditor as unknown)
-void (CAROUSEL_THEMES as unknown)
 
 // ── Plan helpers ──────────────────────────────────────────────────────────────
 
@@ -153,15 +145,6 @@ export default function CarouselPage() {
   const [generatingMessage, setGeneratingMessage] = useState('')
   const [niche,             setNiche]             = useState('Other')
 
-  // Suppress warnings for state setters used only in future steps
-  void setAccentColor
-  void setSelectedSlideIndex
-  void setIsExporting
-  void setExportProgress
-  void selectedSlideIndex
-  void isExporting
-  void exportProgress
-  void accentColor
 
   // ── Sync niche from profile ───────────────────────────────────────────────
 
@@ -374,15 +357,6 @@ export default function CarouselPage() {
     }
   }, [toast])
 
-  // Suppress handlers used only in future steps
-  void handleExportPdf
-  void handleCopyAllText
-  void handleSaveDraft
-  void savedCarousels
-  void historyLoading
-  void handleUpdateCarousel
-  void isRegenerating
-  void CarouselEditor
 
   // ── Author branding (derived) ─────────────────────────────────────────────
 
@@ -730,11 +704,150 @@ export default function CarouselPage() {
             </div>
           )}
           {currentStep === 3 && (
-            <div className="p-4 text-center text-gray-400" data-carousel-id={carouselId ?? ''}>
-              {/* Step 3 editor — built in next prompt */}
-              {/* authorBranding and handleRegenerateSlide wired up in next prompt */}
-              {typeof authorBranding === 'object' && typeof handleRegenerateSlide === 'function' && null}
-              Step 3 editor — built in next prompt
+            <div className="flex gap-4" style={{ minHeight: 620 }}>
+
+              {/* ── LEFT: slide list + field editor ── */}
+              <div className="w-72 flex-shrink-0 bg-white border border-[#E5E4E0] rounded-xl overflow-hidden flex flex-col">
+                <CarouselEditor
+                  carousel={{
+                    id:                 carouselId ?? undefined,
+                    title:              carouselTitle,
+                    topic,
+                    carousel_type:      selectedType,
+                    theme_id:           selectedTheme,
+                    aspect_ratio:       aspectRatio,
+                    accent_color:       accentColor,
+                    show_slide_numbers: showSlideNumbers,
+                    show_author_handle: showAuthorHandle,
+                    show_branding:      showBranding,
+                    font_style:         fontStyle,
+                    slides,
+                    status:             'draft',
+                  }}
+                  authorBranding={authorBranding}
+                  onUpdate={handleUpdateCarousel}
+                  onRegenerateSlide={handleRegenerateSlide}
+                  isRegenerating={isRegenerating}
+                  selectedSlideId={slides[selectedSlideIndex]?.id}
+                />
+              </div>
+
+              {/* ── RIGHT: theme strip + preview + export bar ── */}
+              <div className="flex-1 flex flex-col gap-3 min-w-0">
+
+                {/* Theme strip */}
+                <div className="bg-white border border-[#E5E4E0] rounded-xl p-3">
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Theme</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {CAROUSEL_THEMES.map(theme => (
+                      <button
+                        key={theme.id}
+                        onClick={() => handleUpdateCarousel({ theme_id: theme.id })}
+                        title={theme.label}
+                        className={cn(
+                          'flex-shrink-0 w-9 h-9 rounded-lg border-2 transition-all relative overflow-hidden',
+                          selectedTheme === theme.id
+                            ? 'border-[#1D9E75] scale-110 shadow-sm'
+                            : 'border-transparent hover:border-gray-300',
+                        )}
+                        style={{ background: theme.background }}
+                      >
+                        <span
+                          className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
+                          style={{ background: theme.accent_color }}
+                        />
+                        <span className="sr-only">{theme.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="flex-1 bg-white border border-[#E5E4E0] rounded-xl flex flex-col items-center justify-center gap-4 p-4">
+                  {slides[selectedSlideIndex] && (
+                    <>
+                      <CarouselSlidePreview
+                        slide={slides[selectedSlideIndex]}
+                        theme={getThemeById(selectedTheme)}
+                        aspectRatio={aspectRatio}
+                        accentColor={accentColor}
+                        showSlideNumber={showSlideNumbers}
+                        showAuthorHandle={showAuthorHandle}
+                        showBranding={showBranding}
+                        totalSlides={slides.length}
+                        fontStyle={fontStyle}
+                        scale={0.55}
+                      />
+
+                      {/* Slide nav */}
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => setSelectedSlideIndex(i => Math.max(0, i - 1))}
+                          disabled={selectedSlideIndex === 0}
+                          className="p-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[#1D9E75] hover:text-[#1D9E75] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <span className="text-sm text-gray-500 font-medium tabular-nums">
+                          {selectedSlideIndex + 1} / {slides.length}
+                        </span>
+                        <button
+                          onClick={() => setSelectedSlideIndex(i => Math.min(slides.length - 1, i + 1))}
+                          disabled={selectedSlideIndex === slides.length - 1}
+                          className="p-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[#1D9E75] hover:text-[#1D9E75] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Export bar */}
+                <div className="bg-white border border-[#E5E4E0] rounded-xl px-4 py-3 flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-[#0A2540] flex-1 truncate min-w-0">{carouselTitle}</span>
+
+                  <button
+                    onClick={handleCopyAllText}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:border-[#1D9E75] hover:text-[#1D9E75] transition-colors flex-shrink-0"
+                  >
+                    <Copy size={13} />
+                    Copy text
+                  </button>
+
+                  <button
+                    onClick={handleSaveDraft}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:border-[#1D9E75] hover:text-[#1D9E75] transition-colors flex-shrink-0"
+                  >
+                    <Save size={13} />
+                    Save
+                  </button>
+
+                  <button
+                    onClick={handleExportPdf}
+                    disabled={isExporting}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex-shrink-0',
+                      isExporting
+                        ? 'bg-gray-100 text-gray-400 cursor-wait'
+                        : 'bg-[#1D9E75] hover:bg-[#178a64] text-white',
+                    )}
+                  >
+                    {isExporting ? (
+                      <>
+                        <RefreshCw size={13} className="animate-spin" />
+                        {exportProgress > 0 ? `${exportProgress}%` : 'Exporting…'}
+                      </>
+                    ) : (
+                      <>
+                        <Download size={13} />
+                        Export PDF
+                      </>
+                    )}
+                  </button>
+                </div>
+
+              </div>
             </div>
           )}
         </div>
@@ -742,8 +855,89 @@ export default function CarouselPage() {
 
       {/* History tab */}
       {activeTab === 'history' && (
-        <div className="p-4 text-center text-gray-400">
-          History — built in next prompt
+        <div>
+          {historyLoading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-6 h-6 border-2 border-[#1D9E75] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : savedCarousels.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+              <LayoutTemplate className="w-10 h-10 text-gray-300" />
+              <p className="text-sm text-gray-500 font-medium">No carousels yet</p>
+              <p className="text-xs text-gray-400">Create your first carousel to see it here</p>
+              <button
+                onClick={() => { setActiveTab('create'); setCurrentStep(1) }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1D9E75] text-white text-sm font-bold hover:bg-[#178a64] transition-colors"
+              >
+                <Plus size={14} />
+                Create a carousel
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {savedCarousels.map(c => (
+                <div key={c.id} className="bg-white border border-[#E5E4E0] rounded-xl p-4 flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#0A2540] truncate">{c.title ?? 'Untitled'}</p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-[11px] text-gray-400">{c.slides?.length ?? 0} slides</span>
+                      {c.carousel_type && (
+                        <>
+                          <span className="text-[11px] text-gray-300">·</span>
+                          <span className="text-[11px] text-gray-400 capitalize">{c.carousel_type.replace(/_/g, ' ')}</span>
+                        </>
+                      )}
+                      {c.status && (
+                        <>
+                          <span className="text-[11px] text-gray-300">·</span>
+                          <span className={cn(
+                            'text-[10px] font-semibold px-1.5 py-0.5 rounded capitalize',
+                            c.status === 'exported' ? 'bg-[#1D9E75]/10 text-[#1D9E75]' : 'bg-gray-100 text-gray-500',
+                          )}>
+                            {c.status}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => {
+                        setSlides(c.slides ?? [])
+                        setCarouselTitle(c.title ?? '')
+                        setCarouselId(c.id ?? null)
+                        setSelectedTheme(c.theme_id ?? 'clean_minimal')
+                        setSelectedSlideIndex(0)
+                        setActiveTab('create')
+                        setCurrentStep(3)
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:border-[#1D9E75] hover:text-[#1D9E75] transition-colors"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        if (!c.id) return
+                        try {
+                          await fetch(`/api/carousel/${c.id}`, { method: 'DELETE' })
+                          setSavedCarousels(prev => prev.filter(x => x.id !== c.id))
+                          toast.success('Carousel deleted')
+                        } catch {
+                          toast.error('Could not delete carousel')
+                        }
+                      }}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Delete carousel"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -752,5 +946,3 @@ export default function CarouselPage() {
   )
 }
 
-// Satisfy TypeScript for authorBranding which will be used in step 3
-export type { AuthorBranding }

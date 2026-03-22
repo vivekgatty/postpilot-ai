@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { GripVertical, RefreshCw, X, Plus } from 'lucide-react'
 import type { CarouselData, CarouselSlide, AuthorBranding } from '@/types'
@@ -13,6 +13,7 @@ interface CarouselEditorProps {
   onUpdate:           (updates: Partial<CarouselData>) => void
   onRegenerateSlide:  (slideId: string) => Promise<void>
   isRegenerating:     Record<string, boolean>
+  selectedSlideId?:   string
 }
 
 // ── Type badge helpers ─────────────────────────────────────────────────────────
@@ -57,10 +58,15 @@ export default function CarouselEditor({
   onUpdate,
   onRegenerateSlide,
   isRegenerating,
+  selectedSlideId: externalSlideId,
 }: CarouselEditorProps) {
   const [selectedSlideId, setSelectedSlideId] = useState<string>(
-    carousel.slides[0]?.id ?? '',
+    externalSlideId ?? carousel.slides[0]?.id ?? '',
   )
+
+  useEffect(() => {
+    if (externalSlideId) setSelectedSlideId(externalSlideId)
+  }, [externalSlideId])
 
   // ── Add slide ───────────────────────────────────────────────────────────────
 
